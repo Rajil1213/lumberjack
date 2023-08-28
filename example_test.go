@@ -3,7 +3,6 @@ package lumberjack
 
 import (
 	"log"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -29,8 +28,5 @@ func TestUsageWithStandardLogger(t *testing.T) {
 	logger.Printf(content)
 
 	testifyAssert.FileExists(t, logfilename)
-
-	bytesInFile, err := os.ReadFile(logfilename)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Contains(t, string(bytesInFile), content)
+	fileContainsContent(t, logfilename, content)
 }
