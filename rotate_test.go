@@ -1,4 +1,5 @@
-package lumberjack_test
+//nolint:testpackage // use same name as package to access variables to mock
+package lumberjack
 
 import (
 	"io/fs"
@@ -10,14 +11,13 @@ import (
 	"testing"
 
 	testifyAssert "github.com/stretchr/testify/assert"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 // Example of how to rotate in response to SIGHUP.
 func TestRotateOnSigHup(t *testing.T) {
 	cwd := t.TempDir()
-	logfilepath := filepath.Join(cwd, "test.log")
-	l := &lumberjack.Logger{
+	logfilepath := logFile(cwd)
+	l := &Logger{
 		Filename: logfilepath,
 	}
 	log.SetOutput(l)
@@ -73,11 +73,4 @@ func TestRotateOnSigHup(t *testing.T) {
 
 	testifyAssert.Greater(t, len(rotatedLogfile), 0) // the rotated log file has some non-zero length name
 	fileContainsContent(t, rotatedLogfile, content)
-}
-
-func fileContainsContent(t *testing.T, logfilepath string, expectedContent string) {
-	testifyAssert.FileExists(t, logfilepath)
-	bytesInFile, err := os.ReadFile(logfilepath)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Contains(t, string(bytesInFile), expectedContent)
 }
