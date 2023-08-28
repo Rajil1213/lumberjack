@@ -775,9 +775,9 @@ func exists(path string, t testing.TB) {
 }
 
 // fileContainsContent checks if the bytes in `logfilepath` contains the expected content string.
-func fileContainsContent(t *testing.T, logfilepath string, expectedContent string) {
+func fileContainsContent(t *testing.T, logfilepath string, expectedContent []byte) {
 	testifyAssert.FileExists(t, logfilepath)
 	bytesInFile, err := os.ReadFile(logfilepath)
 	testifyAssert.Nil(t, err)
-	testifyAssert.Contains(t, string(bytesInFile), expectedContent)
+	testifyAssert.Contains(t, string(bytesInFile), string(expectedContent))
 }
