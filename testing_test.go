@@ -1,3 +1,4 @@
+//nolint:forbidigo,testpackage // this file contains testing implementation which needs Println
 package lumberjack
 
 import (
@@ -33,6 +34,8 @@ func equals(exp, act interface{}, t testing.TB) {
 // equalsUp is like equals, but used inside helper functions, to ensure that the
 // file and line number reported by failures corresponds to one or more levels
 // up the stack.
+//
+//nolint:unparam // caller always receives 1 inside this package but this may change
 func equalsUp(exp, act interface{}, t testing.TB, caller int) {
 	if !reflect.DeepEqual(exp, act) {
 		_, file, line, _ := runtime.Caller(caller + 1)
@@ -51,6 +54,8 @@ func isNil(obtained interface{}, t testing.TB) {
 // isNilUp is like isNil, but used inside helper functions, to ensure that the
 // file and line number reported by failures corresponds to one or more levels
 // up the stack.
+//
+//nolint:unparam // caller always receives 1 inside this package but this may change
 func isNilUp(obtained interface{}, t testing.TB, caller int) {
 	if !_isNil(obtained) {
 		_, file, line, _ := runtime.Caller(caller + 1)
@@ -82,6 +87,7 @@ func _isNil(obtained interface{}) bool {
 		return true
 	}
 
+	//nolint:exhaustive // exhaustive checks not requried, there are too many cases
 	switch v := reflect.ValueOf(obtained); v.Kind() {
 	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice:
 		return v.IsNil()
