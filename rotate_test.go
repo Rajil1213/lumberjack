@@ -15,6 +15,7 @@ import (
 
 // Example of how to rotate in response to SIGHUP.
 func TestRotateOnSigHup(t *testing.T) {
+	currentTime = fakeTime
 	cwd := t.TempDir()
 	logfilepath := logFile(cwd)
 	l := &Logger{
@@ -38,7 +39,7 @@ func TestRotateOnSigHup(t *testing.T) {
 	content := "this is a test for rotate on sighup"
 	logger.Printf(content)
 
-	fileContainsContent(t, logfilepath, content)
+	fileContainsContent(t, logfilepath, []byte(content))
 
 	c <- syscall.SIGHUP
 
@@ -63,14 +64,8 @@ func TestRotateOnSigHup(t *testing.T) {
 	testifyAssert.Nil(t, walkErr)
 	testifyAssert.Equal(t, 2, len(logfiles)) // the main log file and the rotated log file
 
-	var rotatedLogfile string
-	for _, logfile := range logfiles {
-		if logfile != logfilepath {
-			rotatedLogfile = logfile
-			break
-		}
-	}
+	rotatedLogfile := backupFile(cwd)
 
-	testifyAssert.Greater(t, len(rotatedLogfile), 0) // the rotated log file has some non-zero length name
-	fileContainsContent(t, rotatedLogfile, content)
+	testifyAssert.FileExists(t, rotatedLogfile)
+	fileContainsContent(t, rotatedLogfile, []byte(content))
 }

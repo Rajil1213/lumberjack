@@ -28,5 +28,5 @@ func TestUsageWithStandardLogger(t *testing.T) {
 	logger.Printf(content)
 
 	testifyAssert.FileExists(t, logfilename)
-	fileContainsContent(t, logfilename, content)
+	fileContainsContent(t, logfilename, []byte(content))
 }
