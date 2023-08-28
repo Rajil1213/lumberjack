@@ -719,12 +719,6 @@ func backupFileLocal(dir string) string {
 	return filepath.Join(dir, "foobar-"+fakeTime().Format(backupTimeFormat)+".log")
 }
 
-// logFileLocal returns the log file name in the given directory for the current
-// fake time using the local timezone.
-func logFileLocal(dir string) string {
-	return filepath.Join(dir, fakeTime().Format(backupTimeFormat))
-}
-
 // fileCount checks that the number of files in the directory is exp.
 func fileCount(dir string, exp int, t testing.TB) {
 	files, err := os.ReadDir(dir)
@@ -736,16 +730,6 @@ func fileCount(dir string, exp int, t testing.TB) {
 // newFakeTime sets the fake "current time" to two days later.
 func newFakeTime() {
 	fakeCurrentTime = fakeCurrentTime.Add(time.Hour * 24 * 2)
-}
-
-func notExist(path string, t testing.TB) {
-	_, err := os.Stat(path)
-	assertUp(os.IsNotExist(err), t, 1, "expected to get os.IsNotExist, but instead got %v", err)
-}
-
-func exists(path string, t testing.TB) {
-	_, err := os.Stat(path)
-	assertUp(err == nil, t, 1, "expected file to exist, but got error from os.Stat: %v", err)
 }
 
 // fileContainsContent checks if the bytes in `logfilepath` contains the expected content string.
