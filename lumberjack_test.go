@@ -34,8 +34,7 @@ func fakeTime() time.Time {
 func TestNewFile(t *testing.T) {
 	currentTime = fakeTime
 
-	dir := makeTempDir("TestNewFile", t)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 	l := &Logger{
 		Filename: logFile(dir),
 	}
@@ -446,40 +445,39 @@ func TestOldLogFiles(t *testing.T) {
 	currentTime = fakeTime
 	megabyte = 1
 
-	dir := makeTempDir("TestOldLogFiles", t)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	filename := logFile(dir)
 	data := []byte("data")
 	err := os.WriteFile(filename, data, 0o7)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	// This gives us a time with the same precision as the time we get from the
 	// timestamp in the name.
 	t1, err := time.Parse(backupTimeFormat, fakeTime().UTC().Format(backupTimeFormat))
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	backup := backupFile(dir)
 	err = os.WriteFile(backup, data, 0o7)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	newFakeTime()
 
 	t2, err := time.Parse(backupTimeFormat, fakeTime().UTC().Format(backupTimeFormat))
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	backup2 := backupFile(dir)
 	err = os.WriteFile(backup2, data, 0o7)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	l := &Logger{Filename: filename}
 	files, err := l.oldLogFiles()
-	isNil(err, t)
-	equals(2, len(files), t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, 2, len(files))
 
 	// should be sorted by newest file first, which would be t2
-	equals(t2, files[0].timestamp, t)
-	equals(t1, files[1].timestamp, t)
+	testifyAssert.Equal(t, t2, files[0].timestamp)
+	testifyAssert.Equal(t, t1, files[1].timestamp)
 }
 
 func TestTimeFromName(t *testing.T) {
@@ -499,8 +497,8 @@ func TestTimeFromName(t *testing.T) {
 
 	for _, test := range tests {
 		got, err := l.timeFromName(test.filename, prefix, ext)
-		equals(got, test.want, t)
-		equals(err != nil, test.wantErr, t)
+		testifyAssert.Equal(t, test.want, got)
+		testifyAssert.Equal(t, err != nil, test.wantErr)
 	}
 }
 
@@ -508,8 +506,7 @@ func TestLocalTime(t *testing.T) {
 	currentTime = fakeTime
 	megabyte = 1
 
-	dir := makeTempDir("TestLocalTime", t)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	l := &Logger{
 		Filename:  logFile(dir),
@@ -517,24 +514,24 @@ func TestLocalTime(t *testing.T) {
 		LocalTime: true,
 	}
 	defer l.Close()
+
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	isNil(err, t)
-	equals(len(b), n, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b), n)
 
 	b2 := []byte("fooooooo!")
 	n2, err := l.Write(b2)
-	isNil(err, t)
-	equals(len(b2), n2, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b2), n2)
 
-	existsWithContent(logFile(dir), b2, t)
-	existsWithContent(backupFileLocal(dir), b, t)
+	fileContainsContent(t, logFile(dir), b2)
+	fileContainsContent(t, backupFileLocal(dir), b)
 }
 
 func TestRotate(t *testing.T) {
 	currentTime = fakeTime
-	dir := makeTempDir("TestRotate", t)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	filename := logFile(dir)
 
@@ -544,56 +541,56 @@ func TestRotate(t *testing.T) {
 		MaxSize:    100, // megabytes
 	}
 	defer l.Close()
+
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	isNil(err, t)
-	equals(len(b), n, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b), n)
 
-	existsWithContent(filename, b, t)
+	fileContainsContent(t, filename, b)
 	fileCount(dir, 1, t)
 
 	newFakeTime()
 
 	err = l.Rotate()
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	// we need to wait a little bit since the files get deleted on a different
 	// goroutine.
 	<-time.After(10 * time.Millisecond)
 
 	filename2 := backupFile(dir)
-	existsWithContent(filename2, b, t)
-	existsWithContent(filename, []byte{}, t)
+	fileContainsContent(t, filename2, b)
+	fileContainsContent(t, filename, []byte{})
 	fileCount(dir, 2, t)
 	newFakeTime()
 
 	err = l.Rotate()
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	// we need to wait a little bit since the files get deleted on a different
 	// goroutine.
 	<-time.After(10 * time.Millisecond)
 
 	filename3 := backupFile(dir)
-	existsWithContent(filename3, []byte{}, t)
-	existsWithContent(filename, []byte{}, t)
+	fileContainsContent(t, filename3, []byte{})
+	fileContainsContent(t, filename, []byte{})
 	fileCount(dir, 2, t)
 
 	b2 := []byte("foooooo!")
 	n, err = l.Write(b2)
-	isNil(err, t)
-	equals(len(b2), n, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b2), n)
 
 	// this will use the new fake time
-	existsWithContent(filename, b2, t)
+	fileContainsContent(t, filename, b2)
 }
 
 func TestCompressOnRotate(t *testing.T) {
 	currentTime = fakeTime
 	megabyte = 1
 
-	dir := makeTempDir("TestCompressOnRotate", t)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	filename := logFile(dir)
 	l := &Logger{
@@ -602,22 +599,23 @@ func TestCompressOnRotate(t *testing.T) {
 		MaxSize:  10,
 	}
 	defer l.Close()
+
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	isNil(err, t)
-	equals(len(b), n, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b), n)
 
-	existsWithContent(filename, b, t)
+	fileContainsContent(t, filename, b)
 	fileCount(dir, 1, t)
 
 	newFakeTime()
 
 	err = l.Rotate()
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	// the old logfile should be moved aside and the main logfile should have
 	// nothing in it.
-	existsWithContent(filename, []byte{}, t)
+	fileContainsContent(t, filename, []byte{})
 
 	// we need to wait a little bit since the files get compressed on a different
 	// goroutine.
@@ -628,11 +626,11 @@ func TestCompressOnRotate(t *testing.T) {
 	bc := new(bytes.Buffer)
 	gz := gzip.NewWriter(bc)
 	_, err = gz.Write(b)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 	err = gz.Close()
-	isNil(err, t)
-	existsWithContent(backupFile(dir)+compressSuffix, bc.Bytes(), t)
-	notExist(backupFile(dir), t)
+	testifyAssert.Nil(t, err)
+	fileContainsContent(t, backupFile(dir)+compressSuffix, bc.Bytes())
+	testifyAssert.NoFileExists(t, backupFile(dir))
 
 	fileCount(dir, 2, t)
 }
@@ -641,8 +639,7 @@ func TestCompressOnResume(t *testing.T) {
 	currentTime = fakeTime
 	megabyte = 1
 
-	dir := makeTempDir("TestCompressOnResume", t)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	filename := logFile(dir)
 	l := &Logger{
@@ -656,17 +653,17 @@ func TestCompressOnResume(t *testing.T) {
 	filename2 := backupFile(dir)
 	b := []byte("foo!")
 	err := os.WriteFile(filename2, b, 0o644)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 	err = os.WriteFile(filename2+compressSuffix, []byte{}, 0o644)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	newFakeTime()
 
 	b2 := []byte("boo!")
 	n, err := l.Write(b2)
-	isNil(err, t)
-	equals(len(b2), n, t)
-	existsWithContent(filename, b2, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b2), n)
+	fileContainsContent(t, filename, b2)
 
 	// we need to wait a little bit since the files get compressed on a different
 	// goroutine.
@@ -677,11 +674,11 @@ func TestCompressOnResume(t *testing.T) {
 	bc := new(bytes.Buffer)
 	gz := gzip.NewWriter(bc)
 	_, err = gz.Write(b)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 	err = gz.Close()
-	isNil(err, t)
-	existsWithContent(filename2+compressSuffix, bc.Bytes(), t)
-	notExist(filename2, t)
+	testifyAssert.Nil(t, err)
+	fileContainsContent(t, filename2+compressSuffix, bc.Bytes())
+	testifyAssert.NoFileExists(t, filename2)
 
 	fileCount(dir, 2, t)
 }
@@ -699,34 +696,13 @@ func TestJson(t *testing.T) {
 
 	l := Logger{}
 	err := json.Unmarshal(data, &l)
-	isNil(err, t)
-	equals("foo", l.Filename, t)
-	equals(5, l.MaxSize, t)
-	equals(10, l.MaxAge, t)
-	equals(3, l.MaxBackups, t)
-	equals(true, l.LocalTime, t)
-	equals(true, l.Compress, t)
-}
-
-// makeTempDir creates a file with a semi-unique name in the OS temp directory.
-// It should be based on the name of the test, to keep parallel tests from
-// colliding, and must be cleaned up after the test is finished.
-func makeTempDir(name string, t testing.TB) string {
-	dir := time.Now().Format(name + backupTimeFormat)
-	dir = filepath.Join(os.TempDir(), dir)
-	isNilUp(os.Mkdir(dir, 0o700), t, 1)
-	return dir
-}
-
-// existsWithContent checks that the given file exists and has the correct content.
-func existsWithContent(path string, content []byte, t testing.TB) {
-	info, err := os.Stat(path)
-	isNilUp(err, t, 1)
-	equalsUp(int64(len(content)), info.Size(), t, 1)
-
-	b, err := os.ReadFile(path)
-	isNilUp(err, t, 1)
-	equalsUp(content, b, t, 1)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, "foo", l.Filename)
+	testifyAssert.Equal(t, 5, l.MaxSize)
+	testifyAssert.Equal(t, 10, l.MaxAge)
+	testifyAssert.Equal(t, 3, l.MaxBackups)
+	testifyAssert.Equal(t, true, l.LocalTime)
+	testifyAssert.Equal(t, true, l.Compress)
 }
 
 // logFile returns the log file name in the given directory for the current fake
