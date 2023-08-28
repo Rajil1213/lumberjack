@@ -26,7 +26,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -132,7 +131,7 @@ var (
 // than MaxSize, the file is closed, renamed to include a timestamp of the
 // current time, and a new log file is created using the original log file name.
 // If the length of the write is greater than MaxSize, an error is returned.
-func (l *Logger) Write(p []byte) (n int, err error) {
+func (l *Logger) Write(p []byte) (int, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
@@ -144,7 +143,7 @@ func (l *Logger) Write(p []byte) (n int, err error) {
 	}
 
 	if l.file == nil {
-		if err = l.openExistingOrNew(len(p)); err != nil {
+		if err := l.openExistingOrNew(len(p)); err != nil {
 			return 0, err
 		}
 	}
@@ -155,7 +154,7 @@ func (l *Logger) Write(p []byte) (n int, err error) {
 		}
 	}
 
-	n, err = l.file.Write(p)
+	n, err := l.file.Write(p)
 	l.size += int64(n)
 
 	return n, err
@@ -208,24 +207,25 @@ func (l *Logger) rotate() error {
 func (l *Logger) openNew() error {
 	err := os.MkdirAll(l.dir(), 0o755)
 	if err != nil {
-		return fmt.Errorf("can't make directories for new logfile: %s", err)
+		return fmt.Errorf("can't make directories for new logfile: %w", err)
 	}
 
 	name := l.filename()
-	mode := os.FileMode(0o600)
+	const permissions = 0o600
+	mode := os.FileMode(permissions)
 	info, err := osStat(name)
 	if err == nil {
 		// Copy the mode off the old logfile.
 		mode = info.Mode()
 		// move the existing file
 		newname := backupName(name, l.LocalTime)
-		if err := os.Rename(name, newname); err != nil {
-			return fmt.Errorf("can't rename log file: %s", err)
+		if renameErr := os.Rename(name, newname); renameErr != nil {
+			return fmt.Errorf("can't rename log file: %w", renameErr)
 		}
 
 		// this is a no-op anywhere but linux
-		if err := chown(name, info); err != nil {
-			return err
+		if chownErr := chown(name, info); chownErr != nil {
+			return chownErr
 		}
 	}
 
@@ -234,7 +234,7 @@ func (l *Logger) openNew() error {
 	// just wipe out the contents.
 	f, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, mode)
 	if err != nil {
-		return fmt.Errorf("can't open new logfile: %s", err)
+		return fmt.Errorf("can't open new logfile: %w", err)
 	}
 	l.file = f
 	l.size = 0
@@ -270,7 +270,7 @@ func (l *Logger) openExistingOrNew(writeLen int) error {
 		return l.openNew()
 	}
 	if err != nil {
-		return fmt.Errorf("error getting log file info: %s", err)
+		return fmt.Errorf("error getting log file info: %w", err)
 	}
 
 	if info.Size()+int64(writeLen) >= l.max() {
@@ -400,11 +400,11 @@ func (l *Logger) mill() {
 }
 
 // oldLogFiles returns the list of backup log files stored in the same
-// directory as the current log file, sorted by ModTime
+// directory as the current log file, sorted by ModTime.
 func (l *Logger) oldLogFiles() ([]logInfo, error) {
-	files, err := ioutil.ReadDir(l.dir())
+	files, err := os.ReadDir(l.dir())
 	if err != nil {
-		return nil, fmt.Errorf("can't read log file directory: %s", err)
+		return nil, fmt.Errorf("can't read log file directory: %w", err)
 	}
 	logFiles := []logInfo{}
 
@@ -414,11 +414,11 @@ func (l *Logger) oldLogFiles() ([]logInfo, error) {
 		if f.IsDir() {
 			continue
 		}
-		if t, err := l.timeFromName(f.Name(), prefix, ext); err == nil {
+		if t, extractErr := l.timeFromName(f.Name(), prefix, ext); extractErr == nil {
 			logFiles = append(logFiles, logInfo{t, f})
 			continue
 		}
-		if t, err := l.timeFromName(f.Name(), prefix, ext+compressSuffix); err == nil {
+		if t, extractErr := l.timeFromName(f.Name(), prefix, ext+compressSuffix); extractErr == nil {
 			logFiles = append(logFiles, logInfo{t, f})
 			continue
 		}
@@ -460,10 +460,10 @@ func (l *Logger) dir() string {
 
 // prefixAndExt returns the filename part and extension part from the Logger's
 // filename.
-func (l *Logger) prefixAndExt() (prefix, ext string) {
+func (l *Logger) prefixAndExt() (string, string) {
 	filename := filepath.Base(l.filename())
-	ext = filepath.Ext(filename)
-	prefix = filename[:len(filename)-len(ext)] + "-"
+	ext := filepath.Ext(filename)
+	prefix := filename[:len(filename)-len(ext)] + "-"
 	return prefix, ext
 }
 
@@ -472,24 +472,24 @@ func (l *Logger) prefixAndExt() (prefix, ext string) {
 func compressLogFile(src, dst string) (err error) {
 	f, err := os.Open(src)
 	if err != nil {
-		return fmt.Errorf("failed to open log file: %v", err)
+		return fmt.Errorf("failed to open log file: %w", err)
 	}
 	defer f.Close()
 
 	fi, err := osStat(src)
 	if err != nil {
-		return fmt.Errorf("failed to stat log file: %v", err)
+		return fmt.Errorf("failed to stat log file: %w", err)
 	}
 
-	if err := chown(dst, fi); err != nil {
-		return fmt.Errorf("failed to chown compressed log file: %v", err)
+	if err = chown(dst, fi); err != nil {
+		return fmt.Errorf("failed to chown compressed log file: %w", err)
 	}
 
 	// If this file already exists, we presume it was created by
 	// a previous attempt to compress the log file.
 	gzf, err := os.OpenFile(dst, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, fi.Mode())
 	if err != nil {
-		return fmt.Errorf("failed to open compressed log file: %v", err)
+		return fmt.Errorf("failed to open compressed log file: %w", err)
 	}
 	defer gzf.Close()
 
@@ -498,35 +498,31 @@ func compressLogFile(src, dst string) (err error) {
 	defer func() {
 		if err != nil {
 			os.Remove(dst)
-			err = fmt.Errorf("failed to compress log file: %v", err)
+			err = fmt.Errorf("failed to compress log file: %w", err)
 		}
 	}()
 
-	if _, err := io.Copy(gz, f); err != nil {
+	if _, err = io.Copy(gz, f); err != nil {
 		return err
 	}
-	if err := gz.Close(); err != nil {
+	if err = gz.Close(); err != nil {
 		return err
 	}
-	if err := gzf.Close(); err != nil {
-		return err
-	}
-
-	if err := f.Close(); err != nil {
-		return err
-	}
-	if err := os.Remove(src); err != nil {
+	if err = gzf.Close(); err != nil {
 		return err
 	}
 
-	return nil
+	if err = f.Close(); err != nil {
+		return err
+	}
+	return os.Remove(src)
 }
 
 // logInfo is a convenience struct to return the filename and its embedded
 // timestamp.
 type logInfo struct {
 	timestamp time.Time
-	os.FileInfo
+	os.DirEntry
 }
 
 // byFormatTime sorts by newest time formatted in the name.
