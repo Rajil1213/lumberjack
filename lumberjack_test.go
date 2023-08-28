@@ -1,3 +1,4 @@
+//nolint:testpackage // use same name as package to access variables to mock
 package lumberjack
 
 import (
@@ -5,11 +6,12 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
+
+	testifyAssert "github.com/stretchr/testify/assert"
 )
 
 // !!!NOTE!!!
@@ -21,6 +23,8 @@ import (
 // Since all the tests uses the time to determine filenames etc, we need to
 // control the wall clock as much as possible, which means having a wall clock
 // that doesn't change unless we want it to.
+//
+//nolint:gochecknoglobals // need global time as we need to mock it across all tests
 var fakeCurrentTime = time.Now()
 
 func fakeTime() time.Time {
@@ -38,22 +42,21 @@ func TestNewFile(t *testing.T) {
 	defer l.Close()
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	isNil(err, t)
-	equals(len(b), n, t)
-	existsWithContent(logFile(dir), b, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b), n)
+	fileContainsContent(t, logFile(dir), string(b))
 	fileCount(dir, 1, t)
 }
 
 func TestOpenExisting(t *testing.T) {
 	currentTime = fakeTime
-	dir := makeTempDir("TestOpenExisting", t)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	filename := logFile(dir)
 	data := []byte("foo!")
 	err := os.WriteFile(filename, data, 0o644)
-	isNil(err, t)
-	existsWithContent(filename, data, t)
+	testifyAssert.Nil(t, err)
+	fileContainsContent(t, filename, string(data))
 
 	l := &Logger{
 		Filename: filename,
@@ -61,11 +64,11 @@ func TestOpenExisting(t *testing.T) {
 	defer l.Close()
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	isNil(err, t)
-	equals(len(b), n, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b), n)
 
 	// make sure the file got appended
-	existsWithContent(filename, append(data, b...), t)
+	fileContainsContent(t, filename, string(append(data, b...)))
 
 	// make sure no other files were created
 	fileCount(dir, 1, t)
@@ -74,8 +77,7 @@ func TestOpenExisting(t *testing.T) {
 func TestWriteTooLong(t *testing.T) {
 	currentTime = fakeTime
 	megabyte = 1
-	dir := makeTempDir("TestWriteTooLong", t)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 	l := &Logger{
 		Filename: logFile(dir),
 		MaxSize:  5,
@@ -83,19 +85,20 @@ func TestWriteTooLong(t *testing.T) {
 	defer l.Close()
 	b := []byte("booooooooooooooo!")
 	n, err := l.Write(b)
-	notNil(err, t)
-	equals(0, n, t)
-	equals(err.Error(),
-		fmt.Sprintf("write length %d exceeds maximum file size %d", len(b), l.MaxSize), t)
-	_, err = os.Stat(logFile(dir))
-	assert(os.IsNotExist(err), t, "File exists, but should not have been created")
+	testifyAssert.NotNil(t, err)
+	testifyAssert.Equal(t, 0, n)
+	testifyAssert.Equal(t,
+		err.Error(),
+		fmt.Sprintf("write length %d exceeds maximum file size %d", len(b), l.MaxSize),
+	)
+	testifyAssert.NoFileExists(t, logFile(dir))
 }
 
 func TestMakeLogDir(t *testing.T) {
 	currentTime = fakeTime
+	cwd := t.TempDir()
 	dir := time.Now().Format("TestMakeLogDir" + backupTimeFormat)
-	dir = filepath.Join(os.TempDir(), dir)
-	defer os.RemoveAll(dir)
+	dir = filepath.Join(cwd, dir)
 	filename := logFile(dir)
 	l := &Logger{
 		Filename: filename,
@@ -103,9 +106,9 @@ func TestMakeLogDir(t *testing.T) {
 	defer l.Close()
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	isNil(err, t)
-	equals(len(b), n, t)
-	existsWithContent(logFile(dir), b, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b), n)
+	fileContainsContent(t, logFile(dir), string(b))
 	fileCount(dir, 1, t)
 }
 
@@ -750,10 +753,10 @@ func logFileLocal(dir string) string {
 
 // fileCount checks that the number of files in the directory is exp.
 func fileCount(dir string, exp int, t testing.TB) {
-	files, err := ioutil.ReadDir(dir)
-	isNilUp(err, t, 1)
+	files, err := os.ReadDir(dir)
+	testifyAssert.Nil(t, err)
 	// Make sure no other files were created.
-	equalsUp(exp, len(files), t, 1)
+	testifyAssert.Equal(t, exp, len(files))
 }
 
 // newFakeTime sets the fake "current time" to two days later.
@@ -769,4 +772,12 @@ func notExist(path string, t testing.TB) {
 func exists(path string, t testing.TB) {
 	_, err := os.Stat(path)
 	assertUp(err == nil, t, 1, "expected file to exist, but got error from os.Stat: %v", err)
+}
+
+// fileContainsContent checks if the bytes in `logfilepath` contains the expected content string.
+func fileContainsContent(t *testing.T, logfilepath string, expectedContent string) {
+	testifyAssert.FileExists(t, logfilepath)
+	bytesInFile, err := os.ReadFile(logfilepath)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Contains(t, string(bytesInFile), expectedContent)
 }
