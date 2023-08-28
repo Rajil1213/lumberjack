@@ -327,32 +327,31 @@ func TestCleanupExistingBackups(t *testing.T) {
 	currentTime = fakeTime
 	megabyte = 1
 
-	dir := makeTempDir("TestCleanupExistingBackups", t)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	// make 3 backup files
 
 	data := []byte("data")
 	backup := backupFile(dir)
 	err := os.WriteFile(backup, data, 0o644)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	newFakeTime()
 
 	backup = backupFile(dir)
 	err = os.WriteFile(backup+compressSuffix, data, 0o644)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	newFakeTime()
 
 	backup = backupFile(dir)
 	err = os.WriteFile(backup, data, 0o644)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	// now create a primary log file with some data
 	filename := logFile(dir)
 	err = os.WriteFile(filename, data, 0o644)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	l := &Logger{
 		Filename:   filename,
@@ -365,8 +364,8 @@ func TestCleanupExistingBackups(t *testing.T) {
 
 	b2 := []byte("foooooo!")
 	n, err := l.Write(b2)
-	isNil(err, t)
-	equals(len(b2), n, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b2), n)
 
 	// we need to wait a little bit since the files get deleted on a different
 	// goroutine.
@@ -380,8 +379,7 @@ func TestMaxAge(t *testing.T) {
 	currentTime = fakeTime
 	megabyte = 1
 
-	dir := makeTempDir("TestMaxAge", t)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	filename := logFile(dir)
 	l := &Logger{
@@ -390,12 +388,13 @@ func TestMaxAge(t *testing.T) {
 		MaxAge:   1,
 	}
 	defer l.Close()
+
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	isNil(err, t)
-	equals(len(b), n, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b), n)
 
-	existsWithContent(filename, b, t)
+	fileContainsContent(t, filename, b)
 	fileCount(dir, 1, t)
 
 	// two days later
@@ -403,9 +402,9 @@ func TestMaxAge(t *testing.T) {
 
 	b2 := []byte("foooooo!")
 	n, err = l.Write(b2)
-	isNil(err, t)
-	equals(len(b2), n, t)
-	existsWithContent(backupFile(dir), b, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b2), n)
+	fileContainsContent(t, backupFile(dir), b)
 
 	// we need to wait a little bit since the files get deleted on a different
 	// goroutine.
@@ -415,19 +414,19 @@ func TestMaxAge(t *testing.T) {
 	// created.
 	fileCount(dir, 2, t)
 
-	existsWithContent(filename, b2, t)
+	fileContainsContent(t, filename, b2)
 
 	// we should have deleted the old file due to being too old
-	existsWithContent(backupFile(dir), b, t)
+	fileContainsContent(t, backupFile(dir), b)
 
 	// two days later
 	newFakeTime()
 
 	b3 := []byte("baaaaar!")
 	n, err = l.Write(b3)
-	isNil(err, t)
-	equals(len(b3), n, t)
-	existsWithContent(backupFile(dir), b2, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b3), n)
+	fileContainsContent(t, backupFile(dir), b2)
 
 	// we need to wait a little bit since the files get deleted on a different
 	// goroutine.
@@ -437,10 +436,10 @@ func TestMaxAge(t *testing.T) {
 	// backup.  The earlier backup is past the cutoff and should be gone.
 	fileCount(dir, 2, t)
 
-	existsWithContent(filename, b3, t)
+	fileContainsContent(t, filename, b3)
 
 	// we should have deleted the old file due to being too old
-	existsWithContent(backupFile(dir), b2, t)
+	fileContainsContent(t, backupFile(dir), b2)
 }
 
 func TestOldLogFiles(t *testing.T) {
