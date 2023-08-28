@@ -311,43 +311,9 @@ func (l *Logger) millRunOnce() error {
 		return err
 	}
 
-	var compress, remove []logInfo
+	remove, files := l.filesToRemoveAndKeep(files)
 
-	if l.MaxBackups > 0 && l.MaxBackups < len(files) {
-		preserved := make(map[string]bool)
-		var remaining []logInfo
-		for _, f := range files {
-			// Only count the uncompressed log file or the
-			// compressed log file, not both.
-			fn := f.Name()
-			if strings.HasSuffix(fn, compressSuffix) {
-				fn = fn[:len(fn)-len(compressSuffix)]
-			}
-			preserved[fn] = true
-
-			if len(preserved) > l.MaxBackups {
-				remove = append(remove, f)
-			} else {
-				remaining = append(remaining, f)
-			}
-		}
-		files = remaining
-	}
-	if l.MaxAge > 0 {
-		diff := time.Duration(int64(24*time.Hour) * int64(l.MaxAge))
-		cutoff := currentTime().Add(-1 * diff)
-
-		var remaining []logInfo
-		for _, f := range files {
-			if f.timestamp.Before(cutoff) {
-				remove = append(remove, f)
-			} else {
-				remaining = append(remaining, f)
-			}
-		}
-		files = remaining
-	}
-
+	var compress []logInfo
 	if l.Compress {
 		for _, f := range files {
 			if !strings.HasSuffix(f.Name(), compressSuffix) {
@@ -371,6 +337,44 @@ func (l *Logger) millRunOnce() error {
 	}
 
 	return err
+}
+
+func (l *Logger) filesToRemoveAndKeep(oldLogFiles []logInfo) ([]logInfo, []logInfo) {
+	var filesToRemove, filesToKeep []logInfo
+
+	if l.MaxBackups > 0 && l.MaxBackups < len(oldLogFiles) {
+		preserved := make(map[string]struct{})
+		for _, f := range oldLogFiles {
+			// Only count the uncompressed log file or the
+			// compressed log file, not both.
+			fn := strings.TrimSuffix(f.Name(), compressSuffix)
+			preserved[fn] = struct{}{}
+
+			if len(preserved) > l.MaxBackups {
+				filesToRemove = append(filesToRemove, f)
+			} else {
+				filesToKeep = append(filesToKeep, f)
+			}
+		}
+	}
+
+	if l.MaxAge > 0 {
+		const numHoursInDay = 24
+		diff := time.Duration(int64(numHoursInDay*time.Hour) * int64(l.MaxAge))
+		cutoff := currentTime().Add(-1 * diff)
+
+		var remaining []logInfo
+		for _, f := range filesToKeep {
+			if f.timestamp.Before(cutoff) {
+				filesToRemove = append(filesToRemove, f)
+			} else {
+				remaining = append(remaining, f)
+			}
+		}
+		filesToKeep = remaining
+	}
+
+	return filesToRemove, filesToKeep
 }
 
 // millRun runs in a goroutine to manage post-rotation compression and removal
