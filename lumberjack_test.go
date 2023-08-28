@@ -199,8 +199,7 @@ func TestFirstWriteRotate(t *testing.T) {
 func TestMaxBackups(t *testing.T) {
 	currentTime = fakeTime
 	megabyte = 1
-	dir := makeTempDir("TestMaxBackups", t)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	filename := logFile(dir)
 	l := &Logger{
@@ -211,10 +210,10 @@ func TestMaxBackups(t *testing.T) {
 	defer l.Close()
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	isNil(err, t)
-	equals(len(b), n, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b), n)
 
-	existsWithContent(filename, b, t)
+	fileContainsContent(t, filename, b)
 	fileCount(dir, 1, t)
 
 	newFakeTime()
@@ -222,15 +221,15 @@ func TestMaxBackups(t *testing.T) {
 	// this will put us over the max
 	b2 := []byte("foooooo!")
 	n, err = l.Write(b2)
-	isNil(err, t)
-	equals(len(b2), n, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b2), n)
 
 	// this will use the new fake time
 	secondFilename := backupFile(dir)
-	existsWithContent(secondFilename, b, t)
+	fileContainsContent(t, secondFilename, b)
 
 	// make sure the old file still exists with the same content.
-	existsWithContent(filename, b2, t)
+	fileContainsContent(t, filename, b2)
 
 	fileCount(dir, 2, t)
 
@@ -239,14 +238,14 @@ func TestMaxBackups(t *testing.T) {
 	// this will make us rotate again
 	b3 := []byte("baaaaaar!")
 	n, err = l.Write(b3)
-	isNil(err, t)
-	equals(len(b3), n, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b3), n)
 
 	// this will use the new fake time
 	thirdFilename := backupFile(dir)
-	existsWithContent(thirdFilename, b2, t)
+	fileContainsContent(t, thirdFilename, b2)
 
-	existsWithContent(filename, b3, t)
+	fileContainsContent(t, filename, b3)
 
 	// we need to wait a little bit since the files get deleted on a different
 	// goroutine.
@@ -256,10 +255,10 @@ func TestMaxBackups(t *testing.T) {
 	fileCount(dir, 2, t)
 
 	// second file name should still exist
-	existsWithContent(thirdFilename, b2, t)
+	fileContainsContent(t, thirdFilename, b2)
 
 	// should have deleted the first backup
-	notExist(secondFilename, t)
+	testifyAssert.NoFileExists(t, secondFilename)
 
 	// now test that we don't delete directories or non-logfile files
 
@@ -269,13 +268,13 @@ func TestMaxBackups(t *testing.T) {
 	// It shouldn't get caught by our deletion filters.
 	notlogfile := logFile(dir) + ".foo"
 	err = os.WriteFile(notlogfile, []byte("data"), 0o644)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	// Make a directory that exactly matches our log file filters... it still
 	// shouldn't get caught by the deletion filter since it's a directory.
 	notlogfiledir := backupFile(dir)
 	err = os.Mkdir(notlogfiledir, 0o700)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	newFakeTime()
 
@@ -287,16 +286,16 @@ func TestMaxBackups(t *testing.T) {
 	// log files still exist.
 	compLogFile := fourthFilename + compressSuffix
 	err = os.WriteFile(compLogFile, []byte("compress"), 0o644)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	// this will make us rotate again
 	b4 := []byte("baaaaaaz!")
 	n, err = l.Write(b4)
-	isNil(err, t)
-	equals(len(b4), n, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b4), n)
 
-	existsWithContent(fourthFilename, b3, t)
-	existsWithContent(fourthFilename+compressSuffix, []byte("compress"), t)
+	fileContainsContent(t, fourthFilename, b3)
+	fileContainsContent(t, fourthFilename+compressSuffix, []byte("compress"))
 
 	// we need to wait a little bit since the files get deleted on a different
 	// goroutine.
@@ -307,18 +306,18 @@ func TestMaxBackups(t *testing.T) {
 	fileCount(dir, 5, t)
 
 	// third file name should still exist
-	existsWithContent(filename, b4, t)
+	fileContainsContent(t, filename, b4)
 
-	existsWithContent(fourthFilename, b3, t)
+	fileContainsContent(t, fourthFilename, b3)
 
 	// should have deleted the first filename
-	notExist(thirdFilename, t)
+	testifyAssert.NoFileExists(t, thirdFilename)
 
 	// the not-a-logfile should still exist
-	exists(notlogfile, t)
+	testifyAssert.FileExists(t, notlogfile)
 
 	// the directory
-	exists(notlogfiledir, t)
+	testifyAssert.DirExists(t, notlogfiledir)
 }
 
 func TestCleanupExistingBackups(t *testing.T) {
