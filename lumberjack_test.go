@@ -44,7 +44,7 @@ func TestNewFile(t *testing.T) {
 	n, err := l.Write(b)
 	testifyAssert.Nil(t, err)
 	testifyAssert.Equal(t, len(b), n)
-	fileContainsContent(t, logFile(dir), string(b))
+	fileContainsContent(t, logFile(dir), b)
 	fileCount(dir, 1, t)
 }
 
@@ -56,7 +56,7 @@ func TestOpenExisting(t *testing.T) {
 	data := []byte("foo!")
 	err := os.WriteFile(filename, data, 0o644)
 	testifyAssert.Nil(t, err)
-	fileContainsContent(t, filename, string(data))
+	fileContainsContent(t, filename, data)
 
 	l := &Logger{
 		Filename: filename,
@@ -68,7 +68,7 @@ func TestOpenExisting(t *testing.T) {
 	testifyAssert.Equal(t, len(b), n)
 
 	// make sure the file got appended
-	fileContainsContent(t, filename, string(append(data, b...)))
+	fileContainsContent(t, filename, append(data, b...))
 
 	// make sure no other files were created
 	fileCount(dir, 1, t)
@@ -108,31 +108,32 @@ func TestMakeLogDir(t *testing.T) {
 	n, err := l.Write(b)
 	testifyAssert.Nil(t, err)
 	testifyAssert.Equal(t, len(b), n)
-	fileContainsContent(t, logFile(dir), string(b))
+	fileContainsContent(t, logFile(dir), b)
 	fileCount(dir, 1, t)
 }
 
 func TestDefaultFilename(t *testing.T) {
 	currentTime = fakeTime
+	// use `os` instead of `t` to fit implementation of `Logger.filename()`
 	dir := os.TempDir()
 	filename := filepath.Join(dir, filepath.Base(os.Args[0])+"-lumberjack.log")
 	defer os.Remove(filename)
+
 	l := &Logger{}
 	defer l.Close()
 	b := []byte("boo!")
 	n, err := l.Write(b)
 
-	isNil(err, t)
-	equals(len(b), n, t)
-	existsWithContent(filename, b, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b), n)
+	fileContainsContent(t, filename, b)
 }
 
 func TestAutoRotate(t *testing.T) {
 	currentTime = fakeTime
 	megabyte = 1
 
-	dir := makeTempDir("TestAutoRotate", t)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	filename := logFile(dir)
 	l := &Logger{
@@ -142,25 +143,25 @@ func TestAutoRotate(t *testing.T) {
 	defer l.Close()
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	isNil(err, t)
-	equals(len(b), n, t)
 
-	existsWithContent(filename, b, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b), n)
+	fileContainsContent(t, filename, b)
 	fileCount(dir, 1, t)
 
 	newFakeTime()
 
 	b2 := []byte("foooooo!")
 	n, err = l.Write(b2)
-	isNil(err, t)
-	equals(len(b2), n, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b2), n)
 
 	// the old logfile should be moved aside and the main logfile should have
 	// only the last write in it.
-	existsWithContent(filename, b2, t)
+	fileContainsContent(t, filename, b2)
 
 	// the backup file will use the current fake time and have the old contents.
-	existsWithContent(backupFile(dir), b, t)
+	fileContainsContent(t, backupFile(dir), b)
 
 	fileCount(dir, 2, t)
 }
@@ -168,8 +169,7 @@ func TestAutoRotate(t *testing.T) {
 func TestFirstWriteRotate(t *testing.T) {
 	currentTime = fakeTime
 	megabyte = 1
-	dir := makeTempDir("TestFirstWriteRotate", t)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	filename := logFile(dir)
 	l := &Logger{
@@ -180,18 +180,18 @@ func TestFirstWriteRotate(t *testing.T) {
 
 	start := []byte("boooooo!")
 	err := os.WriteFile(filename, start, 0o600)
-	isNil(err, t)
+	testifyAssert.Nil(t, err)
 
 	newFakeTime()
 
 	// this would make us rotate
 	b := []byte("fooo!")
 	n, err := l.Write(b)
-	isNil(err, t)
-	equals(len(b), n, t)
+	testifyAssert.Nil(t, err)
+	testifyAssert.Equal(t, len(b), n)
 
-	existsWithContent(filename, b, t)
-	existsWithContent(backupFile(dir), start, t)
+	fileContainsContent(t, filename, b)
+	fileContainsContent(t, backupFile(dir), start)
 
 	fileCount(dir, 2, t)
 }
