@@ -340,8 +340,9 @@ func (l *Logger) millRunOnce() error {
 }
 
 func (l *Logger) filesToRemoveAndKeep(oldLogFiles []logInfo) ([]logInfo, []logInfo) {
-	var filesToRemove, filesToKeep []logInfo
+	var filesToRemove []logInfo
 
+	filesToKeep := oldLogFiles
 	if l.MaxBackups > 0 && l.MaxBackups < len(oldLogFiles) {
 		preserved := make(map[string]struct{})
 		for _, f := range oldLogFiles {
