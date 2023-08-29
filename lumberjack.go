@@ -32,12 +32,15 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 const (
-	backupTimeFormat = "2006-01-02T15-04-05.000000"
+	backupTimeFormat = "2006-01-02T15-04-05.000"
 	compressSuffix   = ".gz"
 	defaultMaxSize   = 100
+	randomSuffixLen  = 8
 )
 
 // ensure we always implement io.WriteCloser.
@@ -122,6 +125,10 @@ var (
 	// os_Stat exists so it can be mocked out by tests.
 	//nolint:gochecknoglobals // keep this global var for mocking in tests
 	osStat = os.Stat
+
+	// os_Stat exists so it can be mocked out by tests.
+	//nolint:gochecknoglobals // keep this global var for mocking in tests
+	newUUID = uuid.New
 
 	// megabyte is the conversion factor between MaxSize and bytes.  It is a
 	// variable so tests can mock it out and not need to write megabytes of data
@@ -258,7 +265,8 @@ func backupName(name string, local bool) string {
 	}
 
 	timestamp := t.Format(backupTimeFormat)
-	return filepath.Join(dir, fmt.Sprintf("%s-%s%s", prefix, timestamp, ext))
+	randomSuffix := newUUID().String()[:randomSuffixLen] // first 4 bytes of UUID
+	return filepath.Join(dir, fmt.Sprintf("%s-%s-%s%s", prefix, timestamp, randomSuffix, ext))
 }
 
 // openExistingOrNew opens the logfile if it exists and if the current write
@@ -445,7 +453,7 @@ func (l *Logger) timeFromName(filename, prefix, ext string) (time.Time, error) {
 	if !strings.HasSuffix(filename, ext) {
 		return time.Time{}, errors.New("mismatched extension")
 	}
-	ts := filename[len(prefix) : len(filename)-len(ext)]
+	ts := filename[len(prefix) : len(filename)-len(ext)-randomSuffixLen-1] // final 1 for hyphen
 	return time.Parse(backupTimeFormat, ts)
 }
 
