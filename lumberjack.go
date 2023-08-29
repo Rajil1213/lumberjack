@@ -40,7 +40,7 @@ const (
 	defaultMaxSize   = 100
 )
 
-// ensure we always implement io.WriteCloser
+// ensure we always implement io.WriteCloser.
 var _ io.WriteCloser = (*Logger)(nil)
 
 // Logger is an io.WriteCloser that writes to the specified filename.
@@ -116,14 +116,17 @@ type Logger struct {
 
 var (
 	// currentTime exists so it can be mocked out by tests.
+	//nolint:gochecknoglobals // keep this global var for mocking in tests
 	currentTime = time.Now
 
 	// os_Stat exists so it can be mocked out by tests.
+	//nolint:gochecknoglobals // keep this global var for mocking in tests
 	osStat = os.Stat
 
 	// megabyte is the conversion factor between MaxSize and bytes.  It is a
 	// variable so tests can mock it out and not need to write megabytes of data
 	// to disk.
+	//nolint:gochecknoglobals // keep this global var for mocking in tests
 	megabyte = 1024 * 1024
 )
 
