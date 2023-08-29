@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func TestMaintainMode(t *testing.T) {
+func TestLinux_MaintainMode(t *testing.T) {
 	currentTime = fakeTime
 	dir := makeTempDir("TestMaintainMode", t)
 	defer os.RemoveAll(dir)

@@ -39,7 +39,7 @@ func fakeUUID() uuid.UUID {
 	return fakeRandomUUID
 }
 
-func TestNewFile(t *testing.T) {
+func TestMain_NewFile(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
 
@@ -83,7 +83,7 @@ func TestOpenExisting(t *testing.T) {
 	fileCount(dir, 1, t)
 }
 
-func TestWriteTooLong(t *testing.T) {
+func TestMain_WriteTooLong(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
 	megabyte = 1
@@ -104,11 +104,11 @@ func TestWriteTooLong(t *testing.T) {
 	testifyAssert.NoFileExists(t, logFile(dir))
 }
 
-func TestMakeLogDir(t *testing.T) {
+func TestMain_MakeLogDir(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
 	cwd := t.TempDir()
-	dir := time.Now().Format("TestMakeLogDir" + backupTimeFormat)
+	dir := time.Now().Format("TestMain_MakeLogDir" + backupTimeFormat)
 	dir = filepath.Join(cwd, dir)
 	filename := logFile(dir)
 	l := &Logger{
@@ -123,7 +123,7 @@ func TestMakeLogDir(t *testing.T) {
 	fileCount(dir, 1, t)
 }
 
-func TestDefaultFilename(t *testing.T) {
+func TestMain_DefaultFilename(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
 	// use `os` instead of `t` to fit implementation of `Logger.filename()`
@@ -141,7 +141,7 @@ func TestDefaultFilename(t *testing.T) {
 	fileContainsContent(t, filename, b)
 }
 
-func TestAutoRotate(t *testing.T) {
+func TestMain_AutoRotate(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
 	megabyte = 1
@@ -179,7 +179,7 @@ func TestAutoRotate(t *testing.T) {
 	fileCount(dir, 2, t)
 }
 
-func TestFirstWriteRotate(t *testing.T) {
+func TestMain_FirstWriteRotate(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
 	megabyte = 1
@@ -210,7 +210,7 @@ func TestFirstWriteRotate(t *testing.T) {
 	fileCount(dir, 2, t)
 }
 
-func TestMaxBackups(t *testing.T) {
+func TestMain_MaxBackups(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
 	megabyte = 1
@@ -335,7 +335,7 @@ func TestMaxBackups(t *testing.T) {
 	testifyAssert.DirExists(t, notlogfiledir)
 }
 
-func TestCleanupExistingBackups(t *testing.T) {
+func TestMain_CleanupExistingBackups(t *testing.T) {
 	// test that if we start with more backup files than we're supposed to have
 	// in total, that extra ones get cleaned up when we rotate.
 
@@ -391,7 +391,7 @@ func TestCleanupExistingBackups(t *testing.T) {
 	fileCount(dir, 2, t)
 }
 
-func TestMaxAge(t *testing.T) {
+func TestMain_MaxAge(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
 	megabyte = 1
@@ -459,7 +459,7 @@ func TestMaxAge(t *testing.T) {
 	fileContainsContent(t, backupFile(dir), b2)
 }
 
-func TestOldLogFiles(t *testing.T) {
+func TestMain_OldLogFiles(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
 	megabyte = 1
@@ -499,7 +499,7 @@ func TestOldLogFiles(t *testing.T) {
 	testifyAssert.Equal(t, t1, files[1].timestamp)
 }
 
-func TestTimeFromName(t *testing.T) {
+func TestMain_TimeFromName(t *testing.T) {
 	l := &Logger{Filename: "/var/log/myfoo/foo.log"}
 	prefix, ext := l.prefixAndExt()
 
@@ -521,7 +521,7 @@ func TestTimeFromName(t *testing.T) {
 	}
 }
 
-func TestLocalTime(t *testing.T) {
+func TestMain_LocalTime(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
 	megabyte = 1
@@ -549,7 +549,7 @@ func TestLocalTime(t *testing.T) {
 	fileContainsContent(t, backupFileLocal(dir), b)
 }
 
-func TestRotate(t *testing.T) {
+func TestMain_Rotate(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
 	dir := t.TempDir()
@@ -607,7 +607,7 @@ func TestRotate(t *testing.T) {
 	fileContainsContent(t, filename, b2)
 }
 
-func TestCompressOnRotate(t *testing.T) {
+func TestMain_CompressOnRotate(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
 	megabyte = 1
@@ -657,7 +657,7 @@ func TestCompressOnRotate(t *testing.T) {
 	fileCount(dir, 2, t)
 }
 
-func TestCompressOnResume(t *testing.T) {
+func TestMain_CompressOnResume(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
 	megabyte = 1
@@ -706,7 +706,7 @@ func TestCompressOnResume(t *testing.T) {
 	fileCount(dir, 2, t)
 }
 
-func TestJson(t *testing.T) {
+func TestMain_Json(t *testing.T) {
 	data := []byte(`
 {
 	"filename": "foo",

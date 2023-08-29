@@ -31,7 +31,7 @@ func NewSlogRotateLogger(lumberjackLogger *Logger) *slog.Logger {
 	return slog.New(slog.NewTextHandler(lumberjackLogger, &slog.HandlerOptions{}))
 }
 
-func TestCreationOfLogFile(t *testing.T) {
+func TestSlog_CreationOfLogFile(t *testing.T) {
 	cwd := t.TempDir()
 	logfile := filepath.Join(cwd, "test.log")
 	lumberjackLogger := NewLumberjackLogger(logfile, 1, 1, 1, false, false)
@@ -42,7 +42,7 @@ func TestCreationOfLogFile(t *testing.T) {
 	assert.FileExists(t, logfile)
 }
 
-func TestRotation(t *testing.T) {
+func TestSlog_Rotation(t *testing.T) {
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)
@@ -70,7 +70,7 @@ func TestRotation(t *testing.T) {
 	assert.Contains(t, entries, filename)
 }
 
-func TestConcurrentLogging(t *testing.T) {
+func TestSlog_ConcurrentLogging(t *testing.T) {
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)
@@ -106,7 +106,7 @@ func TestConcurrentLogging(t *testing.T) {
 	assert.Equal(t, numRoutines, numLines)
 }
 
-func TestRotateInConcurrent(t *testing.T) {
+func TestSlog_RotateInConcurrent(t *testing.T) {
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)

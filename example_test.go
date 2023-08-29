@@ -11,7 +11,7 @@ import (
 
 // To use lumberjack with the standard library's log package, just pass it into
 // the SetOutput function when your application starts.
-func TestUsageWithStandardLogger(t *testing.T) {
+func TestExample_UsageWithStandardLogger(t *testing.T) {
 	cwd := t.TempDir()
 	logfilename := filepath.Join(cwd, "foo.log")
 	log.SetOutput(&Logger{
