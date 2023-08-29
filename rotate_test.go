@@ -16,6 +16,7 @@ import (
 // Example of how to rotate in response to SIGHUP.
 func TestRotateOnSigHup(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	cwd := t.TempDir()
 	logfilepath := logFile(cwd)
 	l := &Logger{

@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	testifyAssert "github.com/stretchr/testify/assert"
 )
 
@@ -22,7 +23,7 @@ import (
 
 // Since all the tests uses the time to determine filenames etc, we need to
 // control the wall clock as much as possible, which means having a wall clock
-// that doesn't change unless we want it to.
+// that doesn't change unless we want it to. The same goes for random UUID.
 //
 //nolint:gochecknoglobals // need global time as we need to mock it across all tests
 var fakeCurrentTime = time.Now()
@@ -31,8 +32,16 @@ func fakeTime() time.Time {
 	return fakeCurrentTime
 }
 
+//nolint:gochecknoglobals // need global random UUID as we need to mock it across all tests
+var fakeRandomUUID = uuid.New()
+
+func fakeUUID() uuid.UUID {
+	return fakeRandomUUID
+}
+
 func TestNewFile(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 
 	dir := t.TempDir()
 	l := &Logger{
@@ -49,6 +58,7 @@ func TestNewFile(t *testing.T) {
 
 func TestOpenExisting(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	dir := t.TempDir()
 
 	filename := logFile(dir)
@@ -75,6 +85,7 @@ func TestOpenExisting(t *testing.T) {
 
 func TestWriteTooLong(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	megabyte = 1
 	dir := t.TempDir()
 	l := &Logger{
@@ -95,6 +106,7 @@ func TestWriteTooLong(t *testing.T) {
 
 func TestMakeLogDir(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	cwd := t.TempDir()
 	dir := time.Now().Format("TestMakeLogDir" + backupTimeFormat)
 	dir = filepath.Join(cwd, dir)
@@ -113,6 +125,7 @@ func TestMakeLogDir(t *testing.T) {
 
 func TestDefaultFilename(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	// use `os` instead of `t` to fit implementation of `Logger.filename()`
 	dir := os.TempDir()
 	filename := filepath.Join(dir, filepath.Base(os.Args[0])+"-lumberjack.log")
@@ -130,6 +143,7 @@ func TestDefaultFilename(t *testing.T) {
 
 func TestAutoRotate(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	megabyte = 1
 
 	dir := t.TempDir()
@@ -167,6 +181,7 @@ func TestAutoRotate(t *testing.T) {
 
 func TestFirstWriteRotate(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	megabyte = 1
 	dir := t.TempDir()
 
@@ -197,6 +212,7 @@ func TestFirstWriteRotate(t *testing.T) {
 
 func TestMaxBackups(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	megabyte = 1
 	dir := t.TempDir()
 
@@ -324,6 +340,7 @@ func TestCleanupExistingBackups(t *testing.T) {
 	// in total, that extra ones get cleaned up when we rotate.
 
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	megabyte = 1
 
 	dir := t.TempDir()
@@ -376,6 +393,7 @@ func TestCleanupExistingBackups(t *testing.T) {
 
 func TestMaxAge(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	megabyte = 1
 
 	dir := t.TempDir()
@@ -443,6 +461,7 @@ func TestMaxAge(t *testing.T) {
 
 func TestOldLogFiles(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	megabyte = 1
 
 	dir := t.TempDir()
@@ -489,9 +508,9 @@ func TestTimeFromName(t *testing.T) {
 		want     time.Time
 		wantErr  bool
 	}{
-		{"foo-2014-05-04T14-44-33.555000.log", time.Date(2014, 5, 4, 14, 44, 33, 555000000, time.UTC), false},
-		{"foo-2014-05-04T14-44-33.555000", time.Time{}, true},
-		{"2014-05-04T14-44-33.555000.log", time.Time{}, true},
+		{"foo-2014-05-04T14-44-33.555-12345678.log", time.Date(2014, 5, 4, 14, 44, 33, 555000000, time.UTC), false},
+		{"foo-2014-05-04T14-44-33.555-12345678", time.Time{}, true},
+		{"2014-05-04T14-44-33.555-12345678.log", time.Time{}, true},
 		{"foo.log", time.Time{}, true},
 	}
 
@@ -504,6 +523,7 @@ func TestTimeFromName(t *testing.T) {
 
 func TestLocalTime(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	megabyte = 1
 
 	dir := t.TempDir()
@@ -531,6 +551,7 @@ func TestLocalTime(t *testing.T) {
 
 func TestRotate(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	dir := t.TempDir()
 
 	filename := logFile(dir)
@@ -588,6 +609,7 @@ func TestRotate(t *testing.T) {
 
 func TestCompressOnRotate(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	megabyte = 1
 
 	dir := t.TempDir()
@@ -637,6 +659,7 @@ func TestCompressOnRotate(t *testing.T) {
 
 func TestCompressOnResume(t *testing.T) {
 	currentTime = fakeTime
+	newUUID = fakeUUID
 	megabyte = 1
 
 	dir := t.TempDir()
@@ -712,11 +735,19 @@ func logFile(dir string) string {
 }
 
 func backupFile(dir string) string {
-	return filepath.Join(dir, "foobar-"+fakeTime().UTC().Format(backupTimeFormat)+".log")
+	return filepath.Join(
+		dir, "foobar-"+
+			fakeTime().UTC().Format(backupTimeFormat)+
+			"-"+newUUID().String()[:randomSuffixLen]+
+			".log")
 }
 
 func backupFileLocal(dir string) string {
-	return filepath.Join(dir, "foobar-"+fakeTime().Format(backupTimeFormat)+".log")
+	return filepath.Join(dir,
+		"foobar-"+
+			fakeTime().Format(backupTimeFormat)+
+			"-"+newUUID().String()[:randomSuffixLen]+
+			".log")
 }
 
 // fileCount checks that the number of files in the directory is exp.
