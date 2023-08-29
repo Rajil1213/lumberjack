@@ -12,13 +12,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func NewLumberjackLogger(
-	filepath string,
+func newLumberjackLogger(
+	logfilepath string,
 	maxBackups, maxAge, maxSize int,
 	localtime, compress bool,
 ) *Logger {
 	return &Logger{
-		Filename:   filepath,
+		Filename:   logfilepath,
 		LocalTime:  localtime,
 		Compress:   compress,
 		MaxSize:    maxSize,
@@ -27,15 +27,15 @@ func NewLumberjackLogger(
 	}
 }
 
-func NewSlogRotateLogger(lumberjackLogger *Logger) *slog.Logger {
+func newSlogRotateLogger(lumberjackLogger *Logger) *slog.Logger {
 	return slog.New(slog.NewTextHandler(lumberjackLogger, &slog.HandlerOptions{}))
 }
 
 func TestSlog_CreationOfLogFile(t *testing.T) {
 	cwd := t.TempDir()
 	logfile := filepath.Join(cwd, "test.log")
-	lumberjackLogger := NewLumberjackLogger(logfile, 1, 1, 1, false, false)
-	logger := NewSlogRotateLogger(lumberjackLogger)
+	lumberjackLogger := newLumberjackLogger(logfile, 1, 1, 1, true, true)
+	logger := newSlogRotateLogger(lumberjackLogger)
 
 	logger.Warn("this is a test", "test_key", "test_value")
 
@@ -46,8 +46,8 @@ func TestSlog_Rotation(t *testing.T) {
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)
-	lumberjackLogger := NewLumberjackLogger(logfile, 0, 0, 0, false, false)
-	logger := NewSlogRotateLogger(lumberjackLogger)
+	lumberjackLogger := newLumberjackLogger(logfile, 0, 0, 0, false, false)
+	logger := newSlogRotateLogger(lumberjackLogger)
 
 	logger.Warn("this is a test", "test_key", "test_value")
 
@@ -74,8 +74,8 @@ func TestSlog_ConcurrentLogging(t *testing.T) {
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)
-	lumberjackLogger := NewLumberjackLogger(logfile, 0, 0, 0, false, false)
-	logger := NewSlogRotateLogger(lumberjackLogger)
+	lumberjackLogger := newLumberjackLogger(logfile, 0, 0, 0, false, false)
+	logger := newSlogRotateLogger(lumberjackLogger)
 
 	numRoutines := 5
 	done := make(chan bool, numRoutines)
@@ -110,8 +110,8 @@ func TestSlog_RotateInConcurrent(t *testing.T) {
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)
-	lumberjackLogger := NewLumberjackLogger(logfile, 0, 0, 0, false, false)
-	logger := NewSlogRotateLogger(lumberjackLogger)
+	lumberjackLogger := newLumberjackLogger(logfile, 0, 0, 0, false, false)
+	logger := newSlogRotateLogger(lumberjackLogger)
 
 	numRoutines := 5
 	done := make(chan bool, numRoutines)
