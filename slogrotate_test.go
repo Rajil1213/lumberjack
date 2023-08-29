@@ -1,30 +1,41 @@
-package slogrotate_test
+//nolint:testpackage // use same name as package to access variables to mock
+package lumberjack
 
 import (
 	"bufio"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"testing"
 
-	"gopkg.in/natefinch/lumberjack.v2"
-	"gopkg.in/natefinch/lumberjack.v2/slogrotate"
-
 	"github.com/stretchr/testify/assert"
 )
+
+func NewLumberjackLogger(
+	filepath string,
+	maxBackups, maxAge, maxSize int,
+	localtime, compress bool,
+) *Logger {
+	return &Logger{
+		Filename:   filepath,
+		LocalTime:  localtime,
+		Compress:   compress,
+		MaxSize:    maxSize,
+		MaxAge:     maxAge,
+		MaxBackups: maxBackups,
+	}
+}
+
+func NewSlogRotateLogger(lumberjackLogger *Logger) *slog.Logger {
+	return slog.New(slog.NewTextHandler(lumberjackLogger, &slog.HandlerOptions{}))
+}
 
 func TestCreationOfLogFile(t *testing.T) {
 	cwd := t.TempDir()
 	logfile := filepath.Join(cwd, "test.log")
-	lumberjackLogger := &lumberjack.Logger{
-		Filename:   logfile,
-		MaxSize:    1,
-		MaxAge:     1,
-		MaxBackups: 1,
-		LocalTime:  false,
-		Compress:   false,
-	}
-	logger := slogrotate.NewSlogRotateLogger(lumberjackLogger)
+	lumberjackLogger := NewLumberjackLogger(logfile, 1, 1, 1, false, false)
+	logger := NewSlogRotateLogger(lumberjackLogger)
 
 	logger.Warn("this is a test", "test_key", "test_value")
 
@@ -35,8 +46,8 @@ func TestRotation(t *testing.T) {
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)
-	lumberjackLogger := slogrotate.NewLumberjackLogger(logfile, 0, 0, 0, false, false)
-	logger := slogrotate.NewSlogRotateLogger(lumberjackLogger)
+	lumberjackLogger := NewLumberjackLogger(logfile, 0, 0, 0, false, false)
+	logger := NewSlogRotateLogger(lumberjackLogger)
 
 	logger.Warn("this is a test", "test_key", "test_value")
 
@@ -63,8 +74,8 @@ func TestConcurrentLogging(t *testing.T) {
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)
-	lumberjackLogger := slogrotate.NewLumberjackLogger(logfile, 0, 0, 0, false, false)
-	logger := slogrotate.NewSlogRotateLogger(lumberjackLogger)
+	lumberjackLogger := NewLumberjackLogger(logfile, 0, 0, 0, false, false)
+	logger := NewSlogRotateLogger(lumberjackLogger)
 
 	numRoutines := 5
 	done := make(chan bool, numRoutines)
@@ -99,8 +110,8 @@ func TestRotateInConcurrent(t *testing.T) {
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)
-	lumberjackLogger := slogrotate.NewLumberjackLogger(logfile, 0, 0, 0, false, false)
-	logger := slogrotate.NewSlogRotateLogger(lumberjackLogger)
+	lumberjackLogger := NewLumberjackLogger(logfile, 0, 0, 0, false, false)
+	logger := NewSlogRotateLogger(lumberjackLogger)
 
 	numRoutines := 5
 	done := make(chan bool, numRoutines)
