@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/pprof"
 	"testing"
 	"time"
 
@@ -726,6 +727,33 @@ func TestMain_Json(t *testing.T) {
 	assert.Equal(t, 3, l.MaxBackups)
 	assert.Equal(t, true, l.LocalTime)
 	assert.Equal(t, true, l.Compress)
+}
+
+func TestMain_MillGoRoutineLeak(t *testing.T) {
+	resetMocks()
+	cwd := t.TempDir()
+
+	numRoutinesBefore := pprof.Lookup("goroutine").Count()
+	filename := logFile(cwd)
+
+	numRoutines := 25
+	for i := 0; i < numRoutines; i++ {
+		func() {
+			l := &Logger{
+				Filename: filename,
+				MaxSize:  10,
+			}
+			defer func() {
+				l.Close()
+			}()
+			b := []byte("boo!")
+			_, err := l.Write(b)
+			assert.Nil(t, err)
+		}()
+	}
+
+	numRoutinesAfter := pprof.Lookup("goroutine").Count()
+	assert.Equal(t, numRoutinesBefore, numRoutinesAfter)
 }
 
 // logFile returns the log file name in the given directory for the current fake
