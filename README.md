@@ -1,16 +1,23 @@
-# lumberjack  [![GoDoc](https://godoc.org/gopkg.in/natefinch/lumberjack.v2?status.png)](https://godoc.org/gopkg.in/natefinch/lumberjack.v2) [![Build Status](https://travis-ci.org/natefinch/lumberjack.svg?branch=v2.0)](https://travis-ci.org/natefinch/lumberjack) [![Build status](https://ci.appveyor.com/api/projects/status/00gchpxtg4gkrt5d)](https://ci.appveyor.com/project/natefinch/lumberjack) [![Coverage Status](https://coveralls.io/repos/natefinch/lumberjack/badge.svg?branch=v2.0)](https://coveralls.io/r/natefinch/lumberjack?branch=v2.0)
+# Woodcutter
 
-### Lumberjack is a Go package for writing logs to rolling files.
+Woodcutter is a Go package for writing logs to rolling files, forked from [lumberjack](https://github.com/natefinch/lumberjack). This fork was created since the original package remains largely unmaintained.
 
-Package lumberjack provides a rolling logger.
+Package woodcutter provides a rolling logger that enhances lumberjack with the following changes:
 
-Note that this is v2.0 of lumberjack, and should be imported using gopkg.in
-thusly:
+1. Lint issues from [.golangci.yml](./.golangci.yaml) have been fixed.
+2. Removes exported variables for `time.Now`, `os.Chown` and others.
+3. `io/ioutil` (deprecated) has been replaced with `os.ReadDir` (more efficient).
+4. As a consequence, the `logInfo` has been modified to to use `os.DirEntry` instead of `fs.FileInfo`.
+5. `example_test.go` has been modified to include an example *and* a test for it.
+6. Custom implementation of testing utility functions (in `testing_test.go`) have been replaced with [`testify`](https://github.com/stretchr/testify).
+7. Go version has been updated to 1.21.0.
+8. Example integration of this package with [`slog`](https://pkg.go.dev/log/slog) from the standard library has been added along with additional tests on it.
+9. A [pull request](https://github.com/natefinch/lumberjack/pull/57) on the original repo that fixes a goroutine leak in the `mill` function has been incorporated.
+10. The first 8 bytes of a random UUID is appended after the timestamp in rotated log files to make sure that no two goroutines end up creating the same rotated log file.
 
-    import "gopkg.in/natefinch/lumberjack.v2"
+> **This repository is not currently ready for contributions.** This will be possible after a GitHub Actions workflow is added in the near future.
 
-The package name remains simply lumberjack, and the code resides at
-https://github.com/natefinch/lumberjack under the v2.0 branch.
+## From the original library
 
 Lumberjack is intended to be one part of a logging infrastructure.
 It is not an all-in-one solution, but instead is a pluggable
@@ -24,8 +31,7 @@ Lumberjack assumes that only one process is writing to the output files.
 Using the same lumberjack configuration from multiple processes on the same
 machine will result in improper behavior.
 
-
-**Example**
+### Example
 
 To use lumberjack with the standard library's log package, just pass it into the SetOutput function when your application starts.
 
@@ -33,17 +39,12 @@ Code:
 
 ```go
 log.SetOutput(&lumberjack.Logger{
-    Filename:   "/var/log/myapp/foo.log",
-    MaxSize:    500, // megabytes
-    MaxBackups: 3,
-    MaxAge:     28, //days
-    Compress:   true, // disabled by default
+
 })
 ```
 
+### type Logger
 
-
-## type Logger
 ``` go
 type Logger struct {
     // Filename is the file to write logs to.  Backup log files will be retained
@@ -78,6 +79,7 @@ type Logger struct {
     // contains filtered or unexported fields
 }
 ```
+
 Logger is an io.WriteCloser that writes to the specified filename.
 
 Logger opens or creates the logfile on first Write.  If the file exists and
@@ -101,6 +103,7 @@ at 6:30pm on Nov 11 2016 would use the filename
 `/var/log/foo/server-2016-11-04T18-30-00.000.log`
 
 ### Cleaning Up Old Log Files
+
 Whenever a new logfile gets created, old log files may be deleted.  The most
 recent files according to the encoded timestamp will be retained, up to a
 number equal to MaxBackups (or all of them if MaxBackups is 0).  Any files
@@ -110,35 +113,25 @@ time, which may differ from the last time that file was written to.
 
 If MaxBackups and MaxAge are both 0, no old log files will be deleted.
 
+#### func (\*Logger) Close
 
-
-
-
-
-
-
-
-
-
-### func (\*Logger) Close
 ``` go
 func (l *Logger) Close() error
 ```
+
 Close implements io.Closer, and closes the current logfile.
 
+#### func (\*Logger) Rotate
 
-
-### func (\*Logger) Rotate
 ``` go
 func (l *Logger) Rotate() error
 ```
+
 Rotate causes Logger to close the existing log file and immediately create a
 new one.  This is a helper function for applications that want to initiate
 rotations outside of the normal rotation rules, such as in response to
 SIGHUP.  After rotating, this initiates a cleanup of old log files according
 to the normal rules.
-
-**Example**
 
 Example of how to rotate in response to SIGHUP.
 
@@ -158,22 +151,16 @@ go func() {
 }()
 ```
 
-### func (\*Logger) Write
+#### func (\*Logger) Write
+
 ``` go
 func (l *Logger) Write(p []byte) (n int, err error)
 ```
+
 Write implements io.Writer.  If a write would cause the log file to be larger
 than MaxSize, the file is closed, renamed to include a timestamp of the
 current time, and a new log file is created using the original log file name.
 If the length of the write is greater than MaxSize, an error is returned.
-
-
-
-
-
-
-
-
 
 - - -
 Generated by [godoc2md](http://godoc.org/github.com/davecheney/godoc2md)
