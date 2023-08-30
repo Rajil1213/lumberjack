@@ -392,6 +392,7 @@ func TestMain_CleanupExistingBackups(t *testing.T) {
 	fileCount(t, dir, 2)
 }
 
+// this test causes a data race as the millRoutine checks the time that this test modifies for testing.
 func TestMain_MaxAge(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
