@@ -14,13 +14,15 @@ import (
 func TestExample_UsageWithStandardLogger(t *testing.T) {
 	cwd := t.TempDir()
 	logfilename := filepath.Join(cwd, "foo.log")
-	log.SetOutput(&Logger{
+	lumberjacklogger := Logger{
 		Filename:   logfilename,
 		MaxSize:    500, // megabytes
 		MaxBackups: 3,
 		MaxAge:     28,   // days
 		Compress:   true, // disabled by default
-	})
+	}
+	log.SetOutput(&lumberjacklogger)
+	defer lumberjacklogger.Close()
 
 	logger := log.Default()
 
