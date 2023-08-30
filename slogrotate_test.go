@@ -32,6 +32,7 @@ func newSlogRotateLogger(lumberjackLogger *Logger) *slog.Logger {
 }
 
 func TestSlog_CreationOfLogFile(t *testing.T) {
+	resetMocks()
 	cwd := t.TempDir()
 	logfile := filepath.Join(cwd, "test.log")
 	lumberjackLogger := newLumberjackLogger(logfile, 1, 1, 1, true, true)
@@ -43,6 +44,7 @@ func TestSlog_CreationOfLogFile(t *testing.T) {
 }
 
 func TestSlog_Rotation(t *testing.T) {
+	resetMocks()
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)
@@ -71,6 +73,7 @@ func TestSlog_Rotation(t *testing.T) {
 }
 
 func TestSlog_ConcurrentLogging(t *testing.T) {
+	resetMocks()
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)
@@ -107,6 +110,7 @@ func TestSlog_ConcurrentLogging(t *testing.T) {
 }
 
 func TestSlog_RotateInConcurrent(t *testing.T) {
+	resetMocks()
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)
