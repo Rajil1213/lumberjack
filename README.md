@@ -6,7 +6,7 @@ Package woodcutter provides a rolling logger that enhances lumberjack with the f
 
 1. Lint issues from [.golangci.yml](./.golangci.yaml) have been fixed.
 2. `io/ioutil` (deprecated) has been replaced with `os.ReadDir` (more efficient).
-3. As a consequence, the `logInfo` has been modified to to use `os.DirEntry` instead of `fs.FileInfo`.
+3. As a consequence, the `logInfo` struct has been modified to use `os.DirEntry` instead of `fs.FileInfo`.
 4. `example_test.go` has been modified to include an example *and* a test for it.
 5. Custom implementation of testing utility functions (in `testing_test.go`) have been replaced with [`testify`](https://github.com/stretchr/testify).
 6. Go version has been updated to 1.21.0.
