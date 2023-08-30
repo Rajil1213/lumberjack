@@ -5,15 +5,14 @@ Woodcutter is a Go package for writing logs to rolling files, forked from [lumbe
 Package woodcutter provides a rolling logger that enhances lumberjack with the following changes:
 
 1. Lint issues from [.golangci.yml](./.golangci.yaml) have been fixed.
-2. Removes exported variables for `time.Now`, `os.Chown` and others.
-3. `io/ioutil` (deprecated) has been replaced with `os.ReadDir` (more efficient).
-4. As a consequence, the `logInfo` has been modified to to use `os.DirEntry` instead of `fs.FileInfo`.
-5. `example_test.go` has been modified to include an example *and* a test for it.
-6. Custom implementation of testing utility functions (in `testing_test.go`) have been replaced with [`testify`](https://github.com/stretchr/testify).
-7. Go version has been updated to 1.21.0.
-8. Example integration of this package with [`slog`](https://pkg.go.dev/log/slog) from the standard library has been added along with additional tests on it.
-9. A [pull request](https://github.com/natefinch/lumberjack/pull/57) on the original repo that fixes a goroutine leak in the `mill` function has been incorporated.
-10. The first 8 bytes of a random UUID is appended after the timestamp in rotated log files to make sure that no two goroutines end up creating the same rotated log file.
+2. `io/ioutil` (deprecated) has been replaced with `os.ReadDir` (more efficient).
+3. As a consequence, the `logInfo` has been modified to to use `os.DirEntry` instead of `fs.FileInfo`.
+4. `example_test.go` has been modified to include an example *and* a test for it.
+5. Custom implementation of testing utility functions (in `testing_test.go`) have been replaced with [`testify`](https://github.com/stretchr/testify).
+6. Go version has been updated to 1.21.0.
+7. Example integration of this package with [`slog`](https://pkg.go.dev/log/slog) from the standard library has been added along with additional tests on it.
+8. A [pull request](https://github.com/natefinch/lumberjack/pull/57) on the original repo that fixes a goroutine leak in the `mill` function has been incorporated.
+9. The first 8 bytes of a random UUID is appended after the timestamp in rotated log files to make sure that no two goroutines end up creating the same rotated log file.
 
 > **This repository is not currently ready for contributions.** This will be possible after a GitHub Actions workflow is added in the near future.
 
