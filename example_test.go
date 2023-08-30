@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	testifyAssert "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 // To use lumberjack with the standard library's log package, just pass it into
@@ -27,6 +27,6 @@ func TestExample_UsageWithStandardLogger(t *testing.T) {
 	content := "test logging with standard logger"
 	logger.Printf(content)
 
-	testifyAssert.FileExists(t, logfilename)
+	assert.FileExists(t, logfilename)
 	fileContainsContent(t, logfilename, []byte(content))
 }

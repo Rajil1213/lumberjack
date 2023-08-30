@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	testifyAssert "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 // !!!NOTE!!!
@@ -50,10 +50,10 @@ func TestMain_NewFile(t *testing.T) {
 	defer l.Close()
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 	fileContainsContent(t, logFile(dir), b)
-	fileCount(dir, 1, t)
+	fileCount(t, dir, 1)
 }
 
 func TestMain_OpenExisting(t *testing.T) {
@@ -64,7 +64,7 @@ func TestMain_OpenExisting(t *testing.T) {
 	filename := logFile(dir)
 	data := []byte("foo!")
 	err := os.WriteFile(filename, data, 0o644)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 	fileContainsContent(t, filename, data)
 
 	l := &Logger{
@@ -73,14 +73,14 @@ func TestMain_OpenExisting(t *testing.T) {
 	defer l.Close()
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 
 	// make sure the file got appended
 	fileContainsContent(t, filename, append(data, b...))
 
 	// make sure no other files were created
-	fileCount(dir, 1, t)
+	fileCount(t, dir, 1)
 }
 
 func TestMain_WriteTooLong(t *testing.T) {
@@ -95,13 +95,13 @@ func TestMain_WriteTooLong(t *testing.T) {
 	defer l.Close()
 	b := []byte("booooooooooooooo!")
 	n, err := l.Write(b)
-	testifyAssert.NotNil(t, err)
-	testifyAssert.Equal(t, 0, n)
-	testifyAssert.Equal(t,
+	assert.NotNil(t, err)
+	assert.Equal(t, 0, n)
+	assert.Equal(t,
 		err.Error(),
 		fmt.Sprintf("write length %d exceeds maximum file size %d", len(b), l.MaxSize),
 	)
-	testifyAssert.NoFileExists(t, logFile(dir))
+	assert.NoFileExists(t, logFile(dir))
 }
 
 func TestMain_MakeLogDir(t *testing.T) {
@@ -117,10 +117,10 @@ func TestMain_MakeLogDir(t *testing.T) {
 	defer l.Close()
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 	fileContainsContent(t, logFile(dir), b)
-	fileCount(dir, 1, t)
+	fileCount(t, dir, 1)
 }
 
 func TestMain_DefaultFilename(t *testing.T) {
@@ -136,8 +136,8 @@ func TestMain_DefaultFilename(t *testing.T) {
 	b := []byte("boo!")
 	n, err := l.Write(b)
 
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 	fileContainsContent(t, filename, b)
 }
 
@@ -157,17 +157,17 @@ func TestMain_AutoRotate(t *testing.T) {
 	b := []byte("boo!")
 	n, err := l.Write(b)
 
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 	fileContainsContent(t, filename, b)
-	fileCount(dir, 1, t)
+	fileCount(t, dir, 1)
 
 	newFakeTime()
 
 	b2 := []byte("foooooo!")
 	n, err = l.Write(b2)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b2), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b2), n)
 
 	// the old logfile should be moved aside and the main logfile should have
 	// only the last write in it.
@@ -176,7 +176,7 @@ func TestMain_AutoRotate(t *testing.T) {
 	// the backup file will use the current fake time and have the old contents.
 	fileContainsContent(t, backupFile(dir), b)
 
-	fileCount(dir, 2, t)
+	fileCount(t, dir, 2)
 }
 
 func TestMain_FirstWriteRotate(t *testing.T) {
@@ -194,20 +194,20 @@ func TestMain_FirstWriteRotate(t *testing.T) {
 
 	start := []byte("boooooo!")
 	err := os.WriteFile(filename, start, 0o600)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	newFakeTime()
 
 	// this would make us rotate
 	b := []byte("fooo!")
 	n, err := l.Write(b)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 
 	fileContainsContent(t, filename, b)
 	fileContainsContent(t, backupFile(dir), start)
 
-	fileCount(dir, 2, t)
+	fileCount(t, dir, 2)
 }
 
 func TestMain_MaxBackups(t *testing.T) {
@@ -225,19 +225,19 @@ func TestMain_MaxBackups(t *testing.T) {
 	defer l.Close()
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 
 	fileContainsContent(t, filename, b)
-	fileCount(dir, 1, t)
+	fileCount(t, dir, 1)
 
 	newFakeTime()
 
 	// this will put us over the max
 	b2 := []byte("foooooo!")
 	n, err = l.Write(b2)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b2), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b2), n)
 
 	// this will use the new fake time
 	secondFilename := backupFile(dir)
@@ -246,15 +246,15 @@ func TestMain_MaxBackups(t *testing.T) {
 	// make sure the old file still exists with the same content.
 	fileContainsContent(t, filename, b2)
 
-	fileCount(dir, 2, t)
+	fileCount(t, dir, 2)
 
 	newFakeTime()
 
 	// this will make us rotate again
 	b3 := []byte("baaaaaar!")
 	n, err = l.Write(b3)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b3), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b3), n)
 
 	// this will use the new fake time
 	thirdFilename := backupFile(dir)
@@ -267,13 +267,13 @@ func TestMain_MaxBackups(t *testing.T) {
 	<-time.After(time.Millisecond * 10)
 
 	// should only have two files in the dir still
-	fileCount(dir, 2, t)
+	fileCount(t, dir, 2)
 
 	// second file name should still exist
 	fileContainsContent(t, thirdFilename, b2)
 
 	// should have deleted the first backup
-	testifyAssert.NoFileExists(t, secondFilename)
+	assert.NoFileExists(t, secondFilename)
 
 	// now test that we don't delete directories or non-logfile files
 
@@ -283,13 +283,13 @@ func TestMain_MaxBackups(t *testing.T) {
 	// It shouldn't get caught by our deletion filters.
 	notlogfile := logFile(dir) + ".foo"
 	err = os.WriteFile(notlogfile, []byte("data"), 0o644)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	// Make a directory that exactly matches our log file filters... it still
 	// shouldn't get caught by the deletion filter since it's a directory.
 	notlogfiledir := backupFile(dir)
 	err = os.Mkdir(notlogfiledir, 0o700)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	newFakeTime()
 
@@ -301,13 +301,13 @@ func TestMain_MaxBackups(t *testing.T) {
 	// log files still exist.
 	compLogFile := fourthFilename + compressSuffix
 	err = os.WriteFile(compLogFile, []byte("compress"), 0o644)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	// this will make us rotate again
 	b4 := []byte("baaaaaaz!")
 	n, err = l.Write(b4)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b4), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b4), n)
 
 	fileContainsContent(t, fourthFilename, b3)
 	fileContainsContent(t, fourthFilename+compressSuffix, []byte("compress"))
@@ -318,7 +318,7 @@ func TestMain_MaxBackups(t *testing.T) {
 
 	// We should have four things in the directory now - the 2 log files, the
 	// not log file, and the directory
-	fileCount(dir, 5, t)
+	fileCount(t, dir, 5)
 
 	// third file name should still exist
 	fileContainsContent(t, filename, b4)
@@ -326,13 +326,13 @@ func TestMain_MaxBackups(t *testing.T) {
 	fileContainsContent(t, fourthFilename, b3)
 
 	// should have deleted the first filename
-	testifyAssert.NoFileExists(t, thirdFilename)
+	assert.NoFileExists(t, thirdFilename)
 
 	// the not-a-logfile should still exist
-	testifyAssert.FileExists(t, notlogfile)
+	assert.FileExists(t, notlogfile)
 
 	// the directory
-	testifyAssert.DirExists(t, notlogfiledir)
+	assert.DirExists(t, notlogfiledir)
 }
 
 func TestMain_CleanupExistingBackups(t *testing.T) {
@@ -350,24 +350,24 @@ func TestMain_CleanupExistingBackups(t *testing.T) {
 	data := []byte("data")
 	backup := backupFile(dir)
 	err := os.WriteFile(backup, data, 0o644)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	newFakeTime()
 
 	backup = backupFile(dir)
 	err = os.WriteFile(backup+compressSuffix, data, 0o644)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	newFakeTime()
 
 	backup = backupFile(dir)
 	err = os.WriteFile(backup, data, 0o644)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	// now create a primary log file with some data
 	filename := logFile(dir)
 	err = os.WriteFile(filename, data, 0o644)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	l := &Logger{
 		Filename:   filename,
@@ -380,15 +380,15 @@ func TestMain_CleanupExistingBackups(t *testing.T) {
 
 	b2 := []byte("foooooo!")
 	n, err := l.Write(b2)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b2), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b2), n)
 
 	// we need to wait a little bit since the files get deleted on a different
 	// goroutine.
 	<-time.After(time.Millisecond * 10)
 
 	// now we should only have 2 files left - the primary and one backup
-	fileCount(dir, 2, t)
+	fileCount(t, dir, 2)
 }
 
 func TestMain_MaxAge(t *testing.T) {
@@ -408,19 +408,19 @@ func TestMain_MaxAge(t *testing.T) {
 
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 
 	fileContainsContent(t, filename, b)
-	fileCount(dir, 1, t)
+	fileCount(t, dir, 1)
 
 	// two days later
 	newFakeTime()
 
 	b2 := []byte("foooooo!")
 	n, err = l.Write(b2)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b2), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b2), n)
 	fileContainsContent(t, backupFile(dir), b)
 
 	// we need to wait a little bit since the files get deleted on a different
@@ -429,7 +429,7 @@ func TestMain_MaxAge(t *testing.T) {
 
 	// We should still have 2 log files, since the most recent backup was just
 	// created.
-	fileCount(dir, 2, t)
+	fileCount(t, dir, 2)
 
 	fileContainsContent(t, filename, b2)
 
@@ -441,8 +441,8 @@ func TestMain_MaxAge(t *testing.T) {
 
 	b3 := []byte("baaaaar!")
 	n, err = l.Write(b3)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b3), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b3), n)
 	fileContainsContent(t, backupFile(dir), b2)
 
 	// we need to wait a little bit since the files get deleted on a different
@@ -451,7 +451,7 @@ func TestMain_MaxAge(t *testing.T) {
 
 	// We should have 2 log files - the main log file, and the most recent
 	// backup.  The earlier backup is past the cutoff and should be gone.
-	fileCount(dir, 2, t)
+	fileCount(t, dir, 2)
 
 	fileContainsContent(t, filename, b3)
 
@@ -469,34 +469,34 @@ func TestMain_OldLogFiles(t *testing.T) {
 	filename := logFile(dir)
 	data := []byte("data")
 	err := os.WriteFile(filename, data, 0o7)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	// This gives us a time with the same precision as the time we get from the
 	// timestamp in the name.
 	t1, err := time.Parse(backupTimeFormat, fakeTime().UTC().Format(backupTimeFormat))
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	backup := backupFile(dir)
 	err = os.WriteFile(backup, data, 0o7)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	newFakeTime()
 
 	t2, err := time.Parse(backupTimeFormat, fakeTime().UTC().Format(backupTimeFormat))
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	backup2 := backupFile(dir)
 	err = os.WriteFile(backup2, data, 0o7)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	l := &Logger{Filename: filename}
 	files, err := l.oldLogFiles()
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, 2, len(files))
+	assert.Nil(t, err)
+	assert.Equal(t, 2, len(files))
 
 	// should be sorted by newest file first, which would be t2
-	testifyAssert.Equal(t, t2, files[0].timestamp)
-	testifyAssert.Equal(t, t1, files[1].timestamp)
+	assert.Equal(t, t2, files[0].timestamp)
+	assert.Equal(t, t1, files[1].timestamp)
 }
 
 func TestMain_TimeFromName(t *testing.T) {
@@ -516,8 +516,8 @@ func TestMain_TimeFromName(t *testing.T) {
 
 	for _, test := range tests {
 		got, err := l.timeFromName(test.filename, prefix, ext)
-		testifyAssert.Equal(t, test.want, got)
-		testifyAssert.Equal(t, err != nil, test.wantErr)
+		assert.Equal(t, test.want, got)
+		assert.Equal(t, err != nil, test.wantErr)
 	}
 }
 
@@ -537,13 +537,13 @@ func TestMain_LocalTime(t *testing.T) {
 
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 
 	b2 := []byte("fooooooo!")
 	n2, err := l.Write(b2)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b2), n2)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b2), n2)
 
 	fileContainsContent(t, logFile(dir), b2)
 	fileContainsContent(t, backupFileLocal(dir), b)
@@ -565,16 +565,16 @@ func TestMain_Rotate(t *testing.T) {
 
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 
 	fileContainsContent(t, filename, b)
-	fileCount(dir, 1, t)
+	fileCount(t, dir, 1)
 
 	newFakeTime()
 
 	err = l.Rotate()
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	// we need to wait a little bit since the files get deleted on a different
 	// goroutine.
@@ -583,11 +583,11 @@ func TestMain_Rotate(t *testing.T) {
 	filename2 := backupFile(dir)
 	fileContainsContent(t, filename2, b)
 	fileContainsContent(t, filename, []byte{})
-	fileCount(dir, 2, t)
+	fileCount(t, dir, 2)
 	newFakeTime()
 
 	err = l.Rotate()
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	// we need to wait a little bit since the files get deleted on a different
 	// goroutine.
@@ -596,12 +596,12 @@ func TestMain_Rotate(t *testing.T) {
 	filename3 := backupFile(dir)
 	fileContainsContent(t, filename3, []byte{})
 	fileContainsContent(t, filename, []byte{})
-	fileCount(dir, 2, t)
+	fileCount(t, dir, 2)
 
 	b2 := []byte("foooooo!")
 	n, err = l.Write(b2)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b2), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b2), n)
 
 	// this will use the new fake time
 	fileContainsContent(t, filename, b2)
@@ -624,16 +624,16 @@ func TestMain_CompressOnRotate(t *testing.T) {
 
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 
 	fileContainsContent(t, filename, b)
-	fileCount(dir, 1, t)
+	fileCount(t, dir, 1)
 
 	newFakeTime()
 
 	err = l.Rotate()
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	// the old logfile should be moved aside and the main logfile should have
 	// nothing in it.
@@ -648,13 +648,13 @@ func TestMain_CompressOnRotate(t *testing.T) {
 	bc := new(bytes.Buffer)
 	gz := gzip.NewWriter(bc)
 	_, err = gz.Write(b)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 	err = gz.Close()
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 	fileContainsContent(t, backupFile(dir)+compressSuffix, bc.Bytes())
-	testifyAssert.NoFileExists(t, backupFile(dir))
+	assert.NoFileExists(t, backupFile(dir))
 
-	fileCount(dir, 2, t)
+	fileCount(t, dir, 2)
 }
 
 func TestMain_CompressOnResume(t *testing.T) {
@@ -676,16 +676,16 @@ func TestMain_CompressOnResume(t *testing.T) {
 	filename2 := backupFile(dir)
 	b := []byte("foo!")
 	err := os.WriteFile(filename2, b, 0o644)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 	err = os.WriteFile(filename2+compressSuffix, []byte{}, 0o644)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 
 	newFakeTime()
 
 	b2 := []byte("boo!")
 	n, err := l.Write(b2)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, len(b2), n)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b2), n)
 	fileContainsContent(t, filename, b2)
 
 	// we need to wait a little bit since the files get compressed on a different
@@ -697,13 +697,13 @@ func TestMain_CompressOnResume(t *testing.T) {
 	bc := new(bytes.Buffer)
 	gz := gzip.NewWriter(bc)
 	_, err = gz.Write(b)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 	err = gz.Close()
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 	fileContainsContent(t, filename2+compressSuffix, bc.Bytes())
-	testifyAssert.NoFileExists(t, filename2)
+	assert.NoFileExists(t, filename2)
 
-	fileCount(dir, 2, t)
+	fileCount(t, dir, 2)
 }
 
 func TestMain_Json(t *testing.T) {
@@ -719,13 +719,13 @@ func TestMain_Json(t *testing.T) {
 
 	l := Logger{}
 	err := json.Unmarshal(data, &l)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Equal(t, "foo", l.Filename)
-	testifyAssert.Equal(t, 5, l.MaxSize)
-	testifyAssert.Equal(t, 10, l.MaxAge)
-	testifyAssert.Equal(t, 3, l.MaxBackups)
-	testifyAssert.Equal(t, true, l.LocalTime)
-	testifyAssert.Equal(t, true, l.Compress)
+	assert.Nil(t, err)
+	assert.Equal(t, "foo", l.Filename)
+	assert.Equal(t, 5, l.MaxSize)
+	assert.Equal(t, 10, l.MaxAge)
+	assert.Equal(t, 3, l.MaxBackups)
+	assert.Equal(t, true, l.LocalTime)
+	assert.Equal(t, true, l.Compress)
 }
 
 // logFile returns the log file name in the given directory for the current fake
@@ -751,11 +751,11 @@ func backupFileLocal(dir string) string {
 }
 
 // fileCount checks that the number of files in the directory is exp.
-func fileCount(dir string, exp int, t testing.TB) {
+func fileCount(t *testing.T, dir string, expectedCount int) {
 	files, err := os.ReadDir(dir)
-	testifyAssert.Nil(t, err)
+	assert.Nil(t, err)
 	// Make sure no other files were created.
-	testifyAssert.Equal(t, exp, len(files))
+	assert.Equal(t, expectedCount, len(files))
 }
 
 // newFakeTime sets the fake "current time" to two days later.
@@ -773,8 +773,8 @@ func resetMocks() {
 
 // fileContainsContent checks if the bytes in `logfilepath` contains the expected content string.
 func fileContainsContent(t *testing.T, logfilepath string, expectedContent []byte) {
-	testifyAssert.FileExists(t, logfilepath)
+	assert.FileExists(t, logfilepath)
 	bytesInFile, err := os.ReadFile(logfilepath)
-	testifyAssert.Nil(t, err)
-	testifyAssert.Contains(t, string(bytesInFile), string(expectedContent))
+	assert.Nil(t, err)
+	assert.Contains(t, string(bytesInFile), string(expectedContent))
 }

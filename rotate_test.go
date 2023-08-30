@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"testing"
 
-	testifyAssert "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 // Example of how to rotate in response to SIGHUP.
@@ -31,7 +31,7 @@ func TestRotate_RotateOnSigHup(t *testing.T) {
 		for {
 			<-c
 			err := l.Rotate()
-			testifyAssert.Nil(t, err)
+			assert.Nil(t, err)
 			doneRotating <- true
 		}
 	}()
@@ -52,7 +52,7 @@ func TestRotate_RotateOnSigHup(t *testing.T) {
 
 	var logfiles []string
 	walkErr := filepath.WalkDir(cwd, func(path string, entry fs.DirEntry, err error) error {
-		testifyAssert.Nil(t, err)
+		assert.Nil(t, err)
 
 		if entry.Type().IsDir() {
 			return nil
@@ -62,11 +62,11 @@ func TestRotate_RotateOnSigHup(t *testing.T) {
 		return nil
 	})
 
-	testifyAssert.Nil(t, walkErr)
-	testifyAssert.Equal(t, 2, len(logfiles)) // the main log file and the rotated log file
+	assert.Nil(t, walkErr)
+	assert.Equal(t, 2, len(logfiles)) // the main log file and the rotated log file
 
 	rotatedLogfile := backupFile(cwd)
 
-	testifyAssert.FileExists(t, rotatedLogfile)
+	assert.FileExists(t, rotatedLogfile)
 	fileContainsContent(t, rotatedLogfile, []byte(content))
 }
