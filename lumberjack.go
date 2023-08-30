@@ -112,6 +112,7 @@ type Logger struct {
 	size int64
 	file *os.File
 	mu   sync.Mutex
+	wg   *sync.WaitGroup
 
 	millCh    chan bool
 	startMill sync.Once
@@ -170,10 +171,18 @@ func (l *Logger) Write(p []byte) (int, error) {
 	return n, err
 }
 
-// Close implements io.Closer, and closes the current logfile.
+// Close implements io.Closer, closes the current logfile,
+// and terminates the mill goroutine if it is running.
 func (l *Logger) Close() error {
 	l.mu.Lock()
 	defer l.mu.Unlock()
+
+	if l.millCh != nil {
+		close(l.millCh)
+		l.wg.Wait()
+		l.millCh = nil
+	}
+
 	return l.close()
 }
 
@@ -350,7 +359,14 @@ func (l *Logger) millRunOnce() error {
 	return err
 }
 
+// filesToRemoveAndKeep returns a list of `logInfo` of files to preserve
+// and a list of `logInfo` of files to remove based on
+// the max number of backups and the max age configured
+// for the old log files present in the log directory.
 func (l *Logger) filesToRemoveAndKeep(oldLogFiles []logInfo) ([]logInfo, []logInfo) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+
 	var filesToRemove []logInfo
 
 	filesToKeep := oldLogFiles
@@ -392,6 +408,7 @@ func (l *Logger) filesToRemoveAndKeep(oldLogFiles []logInfo) ([]logInfo, []logIn
 // millRun runs in a goroutine to manage post-rotation compression and removal
 // of old log files.
 func (l *Logger) millRun() {
+	defer l.wg.Done()
 	for range l.millCh {
 		// what am I going to do, log this?
 		_ = l.millRunOnce()
@@ -402,6 +419,8 @@ func (l *Logger) millRun() {
 // starting the mill goroutine if necessary.
 func (l *Logger) mill() {
 	l.startMill.Do(func() {
+		l.wg = new(sync.WaitGroup)
+		l.wg.Add(1)
 		l.millCh = make(chan bool, 1)
 		go l.millRun()
 	})
