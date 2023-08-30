@@ -56,7 +56,7 @@ func TestMain_NewFile(t *testing.T) {
 	fileCount(dir, 1, t)
 }
 
-func TestOpenExisting(t *testing.T) {
+func TestMain_OpenExisting(t *testing.T) {
 	currentTime = fakeTime
 	newUUID = fakeUUID
 	dir := t.TempDir()
@@ -761,6 +761,14 @@ func fileCount(dir string, exp int, t testing.TB) {
 // newFakeTime sets the fake "current time" to two days later.
 func newFakeTime() {
 	fakeCurrentTime = fakeCurrentTime.Add(time.Hour * 24 * 2)
+}
+
+// resetMocks resets mocks set in the above tests.
+func resetMocks() {
+	currentTime = time.Now
+	newUUID = uuid.New
+	osStat = os.Stat
+	megabyte = 1024 * 1024
 }
 
 // fileContainsContent checks if the bytes in `logfilepath` contains the expected content string.
