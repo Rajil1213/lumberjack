@@ -1,4 +1,4 @@
-module gopkg.in/natefinch/lumberjack.v2
+module github.com/Rajil1213/woodcutter
 
 go 1.21.0
 
@@ -10,5 +10,3 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace gopkg.in/natefinch/lumberjack.v2 => github.com/Rajil1213/woodcutter v1.0.0
