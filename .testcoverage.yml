@@ -1,0 +1,17 @@
+# (mandatory) 
+# Path to coverprofile file (output of `go test -coverprofile` command)
+profile: coverage/cover.out
+
+# Holds coverage thresholds percentages, values should be in range [0-100]
+threshold:
+  # (optional; default 0) 
+  # The minimum coverage that each file should have
+  file: 70
+
+  # (optional; default 0) 
+  # The minimum7coverage that each package should have
+  package: 70
+
+  # (optional; default 0) 
+  # The minimum total coverage project should have
+  total: 80

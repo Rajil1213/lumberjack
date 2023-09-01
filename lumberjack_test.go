@@ -1,4 +1,3 @@
-//nolint:testpackage // use same name as package to access variables to mock
 package lumberjack
 
 import (

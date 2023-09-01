@@ -364,9 +364,6 @@ func (l *Logger) millRunOnce() error {
 // the max number of backups and the max age configured
 // for the old log files present in the log directory.
 func (l *Logger) filesToRemoveAndKeep(oldLogFiles []logInfo) ([]logInfo, []logInfo) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
 	var filesToRemove []logInfo
 
 	filesToKeep := oldLogFiles
