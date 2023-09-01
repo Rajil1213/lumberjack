@@ -30,7 +30,9 @@ jobs:
       run: go test -v -cover ./...
 
     - name: Generate Test Coverage
-      run: go test ./... -coverprofile=./cover.out
+      run: |
+        mkdir -p coverage
+        go test ./... -coverprofile=./coverage/cover.out
 
     - name: check test coverage
       id: coverage ## this step must have id
