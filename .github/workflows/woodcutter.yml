@@ -40,5 +40,4 @@ jobs:
         report: 'true'
         chart: 'true'
         amend: 'false'
-      if: github.ref_name == 'refs/heads/main'  
       continue-on-error: true
