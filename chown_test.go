@@ -1,25 +1,29 @@
-//go:build linux
-// +build linux
+//go:build linux || darwin
+// +build linux darwin
 
 package lumberjack
 
 import (
+	"fmt"
 	"os"
 	"syscall"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
-func TestLinux_MaintainMode(t *testing.T) {
+func TestDarwin_MaintainMode(t *testing.T) {
+	resetMocks()
 	currentTime = fakeTime
-	dir := makeTempDir("TestMaintainMode", t)
-	defer os.RemoveAll(dir)
+	newUUID = fakeUUID
+	cwd := t.TempDir()
 
-	filename := logFile(dir)
+	filename := logFile(cwd)
 
-	mode := os.FileMode(0600)
+	mode := os.FileMode(0o600)
 	f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, mode)
-	isNil(err, t)
+	assert.Nil(t, err)
 	f.Close()
 
 	l := &Logger{
@@ -30,25 +34,28 @@ func TestLinux_MaintainMode(t *testing.T) {
 	defer l.Close()
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	isNil(err, t)
-	equals(len(b), n, t)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 
 	newFakeTime()
 
 	err = l.Rotate()
-	isNil(err, t)
+	assert.Nil(t, err)
 
-	filename2 := backupFile(dir)
+	filename2 := backupFile(cwd)
 	info, err := os.Stat(filename)
-	isNil(err, t)
+	assert.Nil(t, err)
 	info2, err := os.Stat(filename2)
-	isNil(err, t)
-	equals(mode, info.Mode(), t)
-	equals(mode, info2.Mode(), t)
+	assert.Nil(t, err)
+	assert.Equal(t, mode, info.Mode())
+	assert.Equal(t, mode, info2.Mode())
 }
 
-func TestMaintainOwner(t *testing.T) {
+func TestDarwin_MaintainOwner(t *testing.T) {
+	resetMocks()
 	fakeFS := newFakeFS()
+	newUUID = fakeUUID
+
 	osChown = fakeFS.Chown
 	osStat = fakeFS.Stat
 	defer func() {
@@ -56,13 +63,13 @@ func TestMaintainOwner(t *testing.T) {
 		osStat = os.Stat
 	}()
 	currentTime = fakeTime
-	dir := makeTempDir("TestMaintainOwner", t)
+	dir := t.TempDir()
 	defer os.RemoveAll(dir)
 
 	filename := logFile(dir)
 
-	f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, 0644)
-	isNil(err, t)
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, 0o644)
+	assert.Nil(t, err)
 	f.Close()
 
 	l := &Logger{
@@ -73,29 +80,29 @@ func TestMaintainOwner(t *testing.T) {
 	defer l.Close()
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	isNil(err, t)
-	equals(len(b), n, t)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 
 	newFakeTime()
 
 	err = l.Rotate()
-	isNil(err, t)
+	assert.Nil(t, err)
 
-	equals(555, fakeFS.files[filename].uid, t)
-	equals(666, fakeFS.files[filename].gid, t)
+	assert.Equal(t, 555, fakeFS.files[filename].uid)
+	assert.Equal(t, 666, fakeFS.files[filename].gid)
 }
 
-func TestCompressMaintainMode(t *testing.T) {
+func TestDarwin_CompressMaintainMode(t *testing.T) {
+	resetMocks()
 	currentTime = fakeTime
+	newUUID = fakeUUID
 
-	dir := makeTempDir("TestCompressMaintainMode", t)
-	defer os.RemoveAll(dir)
-
+	dir := t.TempDir()
 	filename := logFile(dir)
 
-	mode := os.FileMode(0600)
+	mode := os.FileMode(0o600)
 	f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, mode)
-	isNil(err, t)
+	assert.Nil(t, err)
 	f.Close()
 
 	l := &Logger{
@@ -107,31 +114,34 @@ func TestCompressMaintainMode(t *testing.T) {
 	defer l.Close()
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	isNil(err, t)
-	equals(len(b), n, t)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 
 	newFakeTime()
 
 	err = l.Rotate()
-	isNil(err, t)
+	assert.Nil(t, err)
 
 	// we need to wait a little bit since the files get compressed on a different
 	// goroutine.
-	<-time.After(10 * time.Millisecond)
+	<-time.After(20 * time.Millisecond)
 
 	// a compressed version of the log file should now exist with the correct
 	// mode.
 	filename2 := backupFile(dir)
 	info, err := os.Stat(filename)
-	isNil(err, t)
+	assert.Nil(t, err)
 	info2, err := os.Stat(filename2 + compressSuffix)
-	isNil(err, t)
-	equals(mode, info.Mode(), t)
-	equals(mode, info2.Mode(), t)
+	assert.Nil(t, err)
+	assert.Equal(t, mode, info.Mode())
+	assert.Equal(t, mode, info2.Mode())
 }
 
-func TestCompressMaintainOwner(t *testing.T) {
+func TestDarwin_CompressMaintainOwner(t *testing.T) {
+	resetMocks()
 	fakeFS := newFakeFS()
+	newUUID = fakeUUID
+
 	osChown = fakeFS.Chown
 	osStat = fakeFS.Stat
 	defer func() {
@@ -139,13 +149,12 @@ func TestCompressMaintainOwner(t *testing.T) {
 		osStat = os.Stat
 	}()
 	currentTime = fakeTime
-	dir := makeTempDir("TestCompressMaintainOwner", t)
-	defer os.RemoveAll(dir)
+	dir := t.TempDir()
 
 	filename := logFile(dir)
 
-	f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, 0644)
-	isNil(err, t)
+	f, err := os.OpenFile(filename, os.O_CREATE|os.O_RDWR, 0o644)
+	assert.Nil(t, err)
 	f.Close()
 
 	l := &Logger{
@@ -157,13 +166,13 @@ func TestCompressMaintainOwner(t *testing.T) {
 	defer l.Close()
 	b := []byte("boo!")
 	n, err := l.Write(b)
-	isNil(err, t)
-	equals(len(b), n, t)
+	assert.Nil(t, err)
+	assert.Equal(t, len(b), n)
 
 	newFakeTime()
 
 	err = l.Rotate()
-	isNil(err, t)
+	assert.Nil(t, err)
 
 	// we need to wait a little bit since the files get compressed on a different
 	// goroutine.
@@ -172,8 +181,8 @@ func TestCompressMaintainOwner(t *testing.T) {
 	// a compressed version of the log file should now exist with the correct
 	// owner.
 	filename2 := backupFile(dir)
-	equals(555, fakeFS.files[filename2+compressSuffix].uid, t)
-	equals(666, fakeFS.files[filename2+compressSuffix].gid, t)
+	assert.Equal(t, 555, fakeFS.files[filename2+compressSuffix].uid)
+	assert.Equal(t, 666, fakeFS.files[filename2+compressSuffix].gid)
 }
 
 type fakeFile struct {
@@ -199,7 +208,10 @@ func (fs *fakeFS) Stat(name string) (os.FileInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	stat := info.Sys().(*syscall.Stat_t)
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	if !ok {
+		return nil, fmt.Errorf("could not get file info for %s", name)
+	}
 	stat.Uid = 555
 	stat.Gid = 666
 	return info, nil
