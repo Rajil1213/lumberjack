@@ -42,5 +42,5 @@ jobs:
         amend: 'false'
       if: |
         matrix.os == 'ubuntu-latest' &&
-        github.event_name == 'push'  
+        github.ref_name == 'refs/heads/main'  
       continue-on-error: true
