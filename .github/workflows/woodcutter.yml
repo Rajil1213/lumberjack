@@ -40,7 +40,5 @@ jobs:
         report: 'true'
         chart: 'true'
         amend: 'false'
-      if: |
-        matrix.os == 'ubuntu-latest' &&
-        github.ref_name == 'refs/heads/main'  
+      if: github.ref_name == 'refs/heads/main'  
       continue-on-error: true
