@@ -17,8 +17,6 @@ Package woodcutter provides a rolling logger that enhances lumberjack with the f
 8. A [pull request](https://github.com/natefinch/lumberjack/pull/57) on the original repo that fixes a goroutine leak in the `mill` function has been incorporated.
 9. The first 8 bytes of a random UUID is appended after the timestamp in rotated log files to make sure that no two goroutines end up creating the same rotated log file.
 
-> **This repository is not currently ready for contributions.** This will be possible after a GitHub Actions workflow is added in the near future.
-
 ## From the original library
 
 Lumberjack is intended to be one part of a logging infrastructure.
