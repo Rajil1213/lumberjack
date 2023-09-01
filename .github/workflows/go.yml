@@ -33,15 +33,14 @@ jobs:
       run: go test ./... -coverprofile=./cover.out
 
     - name: check test coverage
+      id: coverage ## this step must have id
       uses: vladopajic/go-test-coverage@v2
       with:
-        # Configure action by specifying input parameters individually (option 2)
-        profile: cover.out
-        threshold-total: 95
+        config: ./.testcoverage.yml
 
     - name: make coverage badge
       uses: action-badges/core@0.2.2
-      # if: contains(github.ref, 'main')
+      if: contains(github.ref, 'main')
       with:
         label: coverage
         message: ${{ steps.coverage.outputs.badge-text }}
