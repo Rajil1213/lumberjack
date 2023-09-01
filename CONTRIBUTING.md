@@ -58,4 +58,4 @@ When you're finished with the changes, create a pull request, also known as a PR
 
 ### Your PR is merged
 
-Congratulations :tada::tada: The GitHub team thanks you :sparkles:.
+Congratulations :tada::tada: and thank you :sparkles:.
