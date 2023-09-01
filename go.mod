@@ -1,6 +1,7 @@
 module github.com/Rajil1213/woodcutter
 
 go 1.21
+toolchain go1.21.0
 
 require github.com/stretchr/testify v1.8.4
 
