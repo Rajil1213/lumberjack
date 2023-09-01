@@ -19,7 +19,7 @@
 // Lumberjack assumes that only one process is writing to the output files.
 // Using the same lumberjack configuration from multiple processes on the same
 // machine will result in improper behavior.
-package lumberjack
+package woodcutter
 
 import (
 	"compress/gzip"

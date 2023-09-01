@@ -1,4 +1,4 @@
-package lumberjack
+package woodcutter
 
 import (
 	"bufio"
