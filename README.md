@@ -1,7 +1,7 @@
 # Woodcutter
 
 [![Build](https://github.com/Rajil1213/woodcutter/actions/workflows/go.yml/badge.svg)](https://github.com/Rajil1213/woodcutter/actions/workflows/go.yml)
-[![Go Coverage](https://github.com/Rajil1213/woodcutter/wiki/coverage.svg)](https://raw.githack.com/wiki/Rajil1213/woodcutter/coverage.html)
+[![Coverage]()]()
 
 Woodcutter is a Go package for writing logs to rolling files, forked from [lumberjack](https://github.com/natefinch/lumberjack). This fork was created since the original package remains largely unmaintained.
 
