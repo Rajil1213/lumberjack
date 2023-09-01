@@ -29,20 +29,12 @@ jobs:
     - name: Test
       run: go test -v -cover ./...
 
-    - name: Export Test Results
-      run: go test -json > TestResults.json
-
-    - name: Upload Go test results
-      uses: actions/upload-artifact@v3
-      with:
-       name: Test-results
-       path: TestResults.json
-
     - name: Get Coverage Report
-      uses: ncruces/go-coverage-report@v0
+      run: |
+        go test -v ./... -covermode=count -coverprofile=coverage.out
+        go tool cover -func=coverage.out -o=coverage.out
+
+    - name: Go Coverage Badge  # Pass the `coverage.out` output to this action
+      uses: tj-actions/coverage-badge-go@v2
       with:
-        report: 'true'
-        chart: 'true'
-        amend: 'false'
-      if: github.event_name == 'push'  
-      continue-on-error: true
+        filename: coverage.out
