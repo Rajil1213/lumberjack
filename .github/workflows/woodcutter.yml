@@ -34,19 +34,13 @@ jobs:
         mkdir -p coverage
         go test ./... -coverprofile=./coverage/cover.out
 
-    - name: check test coverage
-      id: coverage ## this step must have id
-      uses: vladopajic/go-test-coverage@v2
+    - name: Update coverage report
+      uses: ncruces/go-coverage-report@v0
       with:
-        config: ./.testcoverage.yml
-
-    - name: make coverage badge
-      uses: action-badges/core@0.2.2
-      if: contains(github.ref, 'main')
-      with:
-        label: coverage
-        message: ${{ steps.coverage.outputs.badge-text }}
-        message-color: ${{ steps.coverage.outputs.badge-color }}
-        file-name: coverage.svg
-        badge-branch: badges ## orphan branch where badge will be committed
-        github-token: "${{ secrets.GITHUB_TOKEN }}"
+        report: 'true'
+        chart: 'true'
+        amend: 'false'
+      if: |
+        matrix.os == 'ubuntu-latest' &&
+        github.event_name == 'push'  
+      continue-on-error: true
