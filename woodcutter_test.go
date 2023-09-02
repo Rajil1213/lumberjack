@@ -128,7 +128,7 @@ func TestMain_DefaultFilename(t *testing.T) {
 	newUUID = fakeUUID
 	// use `os` instead of `t` to fit implementation of `Logger.filename()`
 	dir := os.TempDir()
-	filename := filepath.Join(dir, filepath.Base(os.Args[0])+"-lumberjack.log")
+	filename := filepath.Join(dir, filepath.Base(os.Args[0])+"-woodcutter.log")
 	defer os.Remove(filename)
 
 	l := &Logger{}

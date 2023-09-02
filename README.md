@@ -19,26 +19,28 @@ Package woodcutter provides a rolling logger that enhances lumberjack with the f
 
 ## From the original library
 
-Lumberjack is intended to be one part of a logging infrastructure.
+(The following has been retained from the docs for the lumberjack library with all instances of `lumberjack` replaced with `woodcutter`)
+
+Woodcutter is intended to be one part of a logging infrastructure.
 It is not an all-in-one solution, but instead is a pluggable
 component at the bottom of the logging stack that simply controls the files
 to which logs are written.
 
-Lumberjack plays well with any logging package that can write to an
+Woodcutter plays well with any logging package that can write to an
 io.Writer, including the standard library's log package.
 
-Lumberjack assumes that only one process is writing to the output files.
-Using the same lumberjack configuration from multiple processes on the same
+Woodcutter assumes that only one process is writing to the output files.
+Using the same woodcutter configuration from multiple processes on the same
 machine will result in improper behavior.
 
 ### Example
 
-To use lumberjack with the standard library's log package, just pass it into the SetOutput function when your application starts.
+To use woodcutter with the standard library's log package, just pass it into the SetOutput function when your application starts.
 
 Code:
 
 ```go
-log.SetOutput(&lumberjack.Logger{
+log.SetOutput(&woodcutter.Logger{
 
 })
 ```
@@ -48,7 +50,7 @@ log.SetOutput(&lumberjack.Logger{
 ``` go
 type Logger struct {
     // Filename is the file to write logs to.  Backup log files will be retained
-    // in the same directory.  It uses <processname>-lumberjack.log in
+    // in the same directory.  It uses <processname>-woodcutter.log in
     // os.TempDir() if empty.
     Filename string `json:"filename" yaml:"filename"`
 
@@ -83,7 +85,7 @@ type Logger struct {
 Logger is an io.WriteCloser that writes to the specified filename.
 
 Logger opens or creates the logfile on first Write.  If the file exists and
-is less than MaxSize megabytes, lumberjack will open and append to that file.
+is less than MaxSize megabytes, woodcutter will open and append to that file.
 If the file exists and its size is >= MaxSize megabytes, the file is renamed
 by putting the current time in a timestamp in the name immediately before the
 file's extension (or the end of the filename if there's no extension). A new
@@ -138,7 +140,7 @@ Example of how to rotate in response to SIGHUP.
 Code:
 
 ```go
-l := &lumberjack.Logger{}
+l := &woodcutter.Logger{}
 log.SetOutput(l)
 c := make(chan os.Signal, 1)
 signal.Notify(c, syscall.SIGHUP)

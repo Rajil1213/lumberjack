@@ -9,20 +9,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// To use lumberjack with the standard library's log package, just pass it into
+// To use woodcutter with the standard library's log package, just pass it into
 // the SetOutput function when your application starts.
 func TestExample_UsageWithStandardLogger(t *testing.T) {
 	cwd := t.TempDir()
 	logfilename := filepath.Join(cwd, "foo.log")
-	lumberjacklogger := Logger{
+	woodcutterlogger := Logger{
 		Filename:   logfilename,
 		MaxSize:    500, // megabytes
 		MaxBackups: 3,
 		MaxAge:     28,   // days
 		Compress:   true, // disabled by default
 	}
-	log.SetOutput(&lumberjacklogger)
-	defer lumberjacklogger.Close()
+	log.SetOutput(&woodcutterlogger)
+	defer woodcutterlogger.Close()
 
 	logger := log.Default()
 

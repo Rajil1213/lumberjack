@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func newLumberjackLogger(
+func newWoodcutterLogger(
 	logfilepath string,
 	maxBackups, maxAge, maxSize int,
 	localtime, compress bool,
@@ -26,16 +26,16 @@ func newLumberjackLogger(
 	}
 }
 
-func newSlogRotateLogger(lumberjackLogger *Logger) *slog.Logger {
-	return slog.New(slog.NewTextHandler(lumberjackLogger, &slog.HandlerOptions{}))
+func newSlogRotateLogger(woodcutterLogger *Logger) *slog.Logger {
+	return slog.New(slog.NewTextHandler(woodcutterLogger, &slog.HandlerOptions{}))
 }
 
 func TestSlog_CreationOfLogFile(t *testing.T) {
 	resetMocks()
 	cwd := t.TempDir()
 	logfile := filepath.Join(cwd, "test.log")
-	lumberjackLogger := newLumberjackLogger(logfile, 1, 1, 1, true, true)
-	logger := newSlogRotateLogger(lumberjackLogger)
+	woodcutterLogger := newWoodcutterLogger(logfile, 1, 1, 1, true, true)
+	logger := newSlogRotateLogger(woodcutterLogger)
 
 	logger.Warn("this is a test", "test_key", "test_value")
 
@@ -47,14 +47,14 @@ func TestSlog_Rotation(t *testing.T) {
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)
-	lumberjackLogger := newLumberjackLogger(logfile, 0, 0, 0, false, false)
-	logger := newSlogRotateLogger(lumberjackLogger)
+	woodcutterLogger := newWoodcutterLogger(logfile, 0, 0, 0, false, false)
+	logger := newSlogRotateLogger(woodcutterLogger)
 
 	logger.Warn("this is a test", "test_key", "test_value")
 
 	assert.FileExists(t, logfile)
 
-	err := lumberjackLogger.Rotate()
+	err := woodcutterLogger.Rotate()
 	assert.Nil(t, err)
 
 	filesInLogDir, readErr := os.ReadDir(cwd)
@@ -76,8 +76,8 @@ func TestSlog_ConcurrentLogging(t *testing.T) {
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)
-	lumberjackLogger := newLumberjackLogger(logfile, 0, 0, 0, false, false)
-	logger := newSlogRotateLogger(lumberjackLogger)
+	woodcutterLogger := newWoodcutterLogger(logfile, 0, 0, 0, false, false)
+	logger := newSlogRotateLogger(woodcutterLogger)
 
 	numRoutines := 5
 	done := make(chan bool, numRoutines)
@@ -113,8 +113,8 @@ func TestSlog_RotateInConcurrent(t *testing.T) {
 	cwd := t.TempDir()
 	filename := "test.log"
 	logfile := filepath.Join(cwd, filename)
-	lumberjackLogger := newLumberjackLogger(logfile, 0, 0, 0, false, false)
-	logger := newSlogRotateLogger(lumberjackLogger)
+	woodcutterLogger := newWoodcutterLogger(logfile, 0, 0, 0, false, false)
+	logger := newSlogRotateLogger(woodcutterLogger)
 
 	numRoutines := 5
 	done := make(chan bool, numRoutines)
@@ -123,7 +123,7 @@ func TestSlog_RotateInConcurrent(t *testing.T) {
 		go func() {
 			logger.Warn("concurrency test", "test_num", testNum)
 			if testNum%2 == 0 {
-				rotateErr := lumberjackLogger.Rotate()
+				rotateErr := woodcutterLogger.Rotate()
 				assert.Nil(t, rotateErr)
 			}
 			done <- true

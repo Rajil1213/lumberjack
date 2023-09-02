@@ -41,7 +41,7 @@ var _ io.WriteCloser = (*Logger)(nil)
 // Logger is an io.WriteCloser that writes to the specified filename.
 //
 // Logger opens or creates the logfile on first Write.  If the file exists and
-// is less than MaxSize megabytes, lumberjack will open and append to that file.
+// is less than MaxSize megabytes, woodcutter will open and append to that file.
 // If the file exists and its size is >= MaxSize megabytes, the file is renamed
 // by putting the current time in a timestamp in the name immediately before the
 // file's extension (or the end of the filename if there's no extension). A new
@@ -72,7 +72,7 @@ var _ io.WriteCloser = (*Logger)(nil)
 // If MaxBackups and MaxAge are both 0, no old log files will be deleted.
 type Logger struct {
 	// Filename is the file to write logs to.  Backup log files will be retained
-	// in the same directory.  It uses <processname>-lumberjack.log in
+	// in the same directory.  It uses <processname>-woodcutter.log in
 	// os.TempDir() if empty.
 	Filename string `json:"filename" yaml:"filename"`
 
@@ -305,7 +305,7 @@ func (l *Logger) filename() string {
 	if l.Filename != "" {
 		return l.Filename
 	}
-	name := filepath.Base(os.Args[0]) + "-lumberjack.log"
+	name := filepath.Base(os.Args[0]) + "-woodcutter.log"
 	return filepath.Join(os.TempDir(), name)
 }
 
@@ -443,7 +443,7 @@ func (l *Logger) oldLogFiles() ([]logInfo, error) {
 			continue
 		}
 		// error parsing means that the suffix at the end was not generated
-		// by lumberjack, and therefore it's not a backup file.
+		// by woodcutter, and therefore it's not a backup file.
 	}
 
 	sort.Sort(byFormatTime(logFiles))
