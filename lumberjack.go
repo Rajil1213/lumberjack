@@ -1,23 +1,15 @@
-// Package lumberjack provides a rolling logger.
+// Package woodcutter provides a rolling logger.
 //
-// Note that this is v2.0 of lumberjack, and should be imported using gopkg.in
-// thusly:
-//
-//	import "gopkg.in/natefinch/lumberjack.v2"
-//
-// The package name remains simply lumberjack, and the code resides at
-// https://github.com/natefinch/lumberjack under the v2.0 branch.
-//
-// Lumberjack is intended to be one part of a logging infrastructure.
+// Woodcutter is intended to be one part of a logging infrastructure.
 // It is not an all-in-one solution, but instead is a pluggable
 // component at the bottom of the logging stack that simply controls the files
 // to which logs are written.
 //
-// Lumberjack plays well with any logging package that can write to an
+// Woodcutter plays well with any logging package that can write to an
 // io.Writer, including the standard library's log package.
 //
-// Lumberjack assumes that only one process is writing to the output files.
-// Using the same lumberjack configuration from multiple processes on the same
+// Woodcutter assumes that only one process is writing to the output files.
+// Using the same Woodcutter configuration from multiple processes on the same
 // machine will result in improper behavior.
 package woodcutter
 
